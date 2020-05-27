@@ -3,14 +3,19 @@ import BrowserWindow from 'electron'
 const videoMenuTemplate = {
   label: "Feature",
   submenu: [
-    { label: "Video", accelerator: "CmdOrCtrl+V",
+    { label: "Video editor", accelerator: "CmdOrCtrl+V",
       click(){
-
+        BrowserWindow.ipcMain.emit('editor:open')
       }
     },
-    { label: "Collection", accelerator: "CmdOrCtrl+C",
+    { label: "Category", accelerator: "CmdOrCtrl+C",
       click(){
-        BrowserWindow.ipcMain.emit('test')
+        BrowserWindow.ipcMain.emit('category:open')
+      }
+    },
+    { label: "Collection", accelerator: "CmdOrCtrl+V",
+      click(){
+        BrowserWindow.ipcMain.emit('collection:open')
       }
     }
   ]

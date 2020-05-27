@@ -9,6 +9,10 @@ class Settings {
     this.video = path.join(this.homeDir, "video")
   }
 
+  getCategoryPath(){
+    return path.join(this.db, "category.json")
+  }
+
   init(){
     const dirs = [this.homeDir, this.db, this.icon, this.video]
     dirs.forEach(d => jetpack.dir(d))
@@ -26,7 +30,6 @@ class Settings {
     })
     //Add default icons
     jetpack.findAsync(path.join(jetpack.cwd(), "resources", "icons"), {matching: "*.svg"}).then(r => {
-      console.log(r)
       r.forEach(f =>{
         const filename = path.basename(f)
         const dest = path.join(this.icon, filename)

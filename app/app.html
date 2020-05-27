@@ -2,24 +2,38 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Electron Boilerplate</title>
+  <title>Vifeco - Video Feature Counter</title>
 </head>
 <body>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <h1>Latest</h1>
+        <div class="row">
+          <div class="col-6">
+            <img src="" alt="image" class="img-fluid colored" >
+          </div>
+          <div class="col-6">
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item">Video1.mp4</li>
+              <li class="list-group-item">1h34min</li>
+              <li class="list-group-item">Transport</li>
+              <li class="list-group-item">365 </li>
+              <li class="list-group-item">1h23</li>
+              <li class="list-group-item"><button class="btn btn-primary">Continue</button> </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-12">
+        <h2>Video list</h2>
+        <table id="table" class="display" width="100%"></table>
 
-  <div id="app" class="container" style="display: none;">
-    <h1 id="greet"></h1>
-    <p>test
-      Welcome to <a href="https://www.electronjs.org/" class="js-external-link">Electron</a> app running on this <strong id="os"></strong> machine.
-    </p>
-    <p>
-      App author: <strong id="author"></strong>
-    </p>
-    <p>
-      Environment: <strong id="env"></strong>
-    </p>
-    <p>
-      Electron version: <strong id="electron-version"></strong>
-    </p>
+
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>

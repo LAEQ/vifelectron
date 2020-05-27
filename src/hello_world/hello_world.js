@@ -1,5 +1,5 @@
 export const greet = () => {
-  return "Hello World!";
+  return "Vifeco - Video Feature Counter";
 };
 
 export const bye = () => {

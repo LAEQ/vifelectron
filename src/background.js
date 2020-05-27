@@ -5,7 +5,6 @@
 
 import path from "path";
 import url from "url";
-import jetpack from "fs-jetpack";
 import { app, Menu } from "electron";
 import { devMenuTemplate } from "./menu/dev_menu_template";
 import { editMenuTemplate } from "./menu/edit_menu_template"
@@ -13,16 +12,19 @@ import { videoMenuTemplate} from "./menu/video_menu_template";
 import createWindow from "./helpers/window";
 
 
-
 require('electron-reload')(__dirname, {
   electron: path.join(__dirname, 'nodes_modules', '.bin', 'electron')
 })
-
 
 // Special module holding environment variables which you declared
 // in config/env_xxx.json file.
 import env from "env";
 import Settings from "./helpers/initialize";
+
+let setting = new Settings();
+
+const src = path.join(setting.video, "test.mp4")
+const dst = path.join(setting.video, "test_dest.mp4")
 
 const setApplicationMenu = () => {
   const menus = [videoMenuTemplate, editMenuTemplate];
@@ -42,7 +44,7 @@ if (env.name !== "production") {
 
 const ipcMain = require('electron').ipcMain
 
-ipcMain.on('test', _ => {
+ipcMain.on('category:open', _ => {
   let categoryWindow = createWindow("category", {
     width: 1000,
     height: 600,
@@ -53,36 +55,64 @@ ipcMain.on('test', _ => {
 
   categoryWindow.setMenu(null);
   categoryWindow.webContents.openDevTools()
-
   categoryWindow.loadURL(
     url.format({
       pathname: path.join(__dirname, "category.html"),
       protocol: "file",
       slashes: true
     })
-  ).then( _ => {
+  ).then( _ => {});
+})
 
+
+ipcMain.on('editor:open', _ => {
+  let editorWindow = createWindow("editor", {
+    width: 1000,
+    height: 600,
+    webPreferences: {
+      nodeIntegration: true
+    }
   });
 
+  let controlWindow = createWindow("controls", {
+    width: 350,
+    height: 800,
+    webPreferences: {
+      nodeIntegration: true
+    }
+  });
+
+  controlWindow.webContents.openDevTools()
+
+  controlWindow.setMenu(null)
+  controlWindow.loadURL(
+    url.format({
+      pathname: path.join(__dirname, "controls.html"),
+      protocol: "file",
+      slashes: true
+    })
+  )
+
+  editorWindow.setMenu(null);
+  editorWindow.webContents.openDevTools()
+  editorWindow.loadURL(
+    url.format({
+      pathname: path.join(__dirname, "editor.html"),
+      protocol: "file",
+      slashes: true
+    })
+  ).then( _ => {
+    editorWindow.webContents.send("video:metadata", "test")
+  });
 })
 
-ipcMain.on('category:create', (event, path) => {
-  console.log(path)
-
+ipcMain.on('category:create', (event, category) => {
+  console.log(category)
 })
 
-const init = _ => {
-
-}
 
 app.on("ready", () => {
   setApplicationMenu();
-
-  // const homeDir = path.join(require('os').homedir(), 'vifeco')
-  // let dirs = ['db', 'icons', 'category']
-  // dirs = dirs.map( d => path.join(homeDir, d))
-  // console.log(dirs)
-  // dirs.forEach(d => jetpack.dir(d))
 
   const settings = new Settings()
   settings.init()

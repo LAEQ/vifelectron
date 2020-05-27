@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Editor</title>
+  <link type="text/css" rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" />
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <h1 id="title"></h1>
+        <video id="player"></video>
+        <div class="row">
+          <div class="col-6">
+            <div class="btn-group" role="group" aria-label="Basic example">
+              <button type="button" class="btn btn-secondary">Stop</button>
+              <button type="button" class="btn btn-secondary">Play</button>
+              <button type="button" class="btn btn-secondary"> |< </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <form>
+    <input id="file" type="file" name="Choose a video: " accept="video/*" />
+    <button type="submit">Get length</button>
+  </form>
+  <script src="editor.js"></script>
+</body>
+</html>

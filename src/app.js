@@ -1,18 +1,11 @@
-import "./stylesheets/main.css";
+import "./scss/app.scss"
 
-// Small helpers you might want to keep
-import "./helpers/context_menu.js";
-import "./helpers/external_links.js";
-
-// ----------------------------------------------------------------------------
-// Everything below is just to show you how it works. You can delete all of it.
-// ----------------------------------------------------------------------------
 
 import { remote } from "electron";
 import jetpack from "fs-jetpack";
-import { greet } from "./hello_world/hello_world";
-import env from "env";
-
+import $ from 'jquery'
+import dt from 'datatables'
+import Repository from "./model/Repository";
 const app = remote.app;
 const appDir = jetpack.cwd(app.getAppPath());
 
@@ -26,9 +19,24 @@ const osMap = {
   linux: "Linux"
 };
 
-document.querySelector("#app").style.display = "block";
-document.querySelector("#greet").innerHTML = greet();
-document.querySelector("#os").innerHTML = osMap[process.platform];
-document.querySelector("#author").innerHTML = manifest.author;
-document.querySelector("#env").innerHTML = env.name;
-document.querySelector("#electron-version").innerHTML = process.versions.electron;
+let d = dt()
+
+var videos = new Repository().fetchVideo()
+
+$('#table').DataTable({
+  "data": videos,
+  "columns": [
+    { "data": "id", title: "id" },
+    { "data": "name", title: "name"},
+    { "data": "collection.name", title: "collection"},
+    { "data": "total", title: "total"},
+    { "data": "createdAt", title: "created at"},
+    { "data": "last", title: "last"},
+    { "data": null}
+  ],
+  "columnDefs": [
+    {"targets": -1, "data": null, "defaultContent": "<button class='btn btn-sm btn-outline-primary'>Edit</button>"}
+  ]
+});
+
+

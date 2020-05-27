@@ -1,9 +1,9 @@
 class Category{
-  constructor(id, name, path, shortcut) {
-    this.id = id
-    this.name = name
-    this.path = path
-    this.shortcut = shortcut
+  constructor(obj) {
+    this.id = obj.id
+    this.name = obj.name
+    this.path = obj.path
+    this.shortcut = obj.shortcut
   }
 }
 

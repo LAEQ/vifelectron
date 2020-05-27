@@ -81,7 +81,7 @@
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = "./src/category.js");
+/******/ 	return __webpack_require__(__webpack_require__.s = "./src/editor.js");
 /******/ })
 /************************************************************************/
 /******/ ({
@@ -21166,10 +21166,10 @@ module.exports = function(module) {
 
 /***/ }),
 
-/***/ "./src/category.js":
-/*!*************************!*\
-  !*** ./src/category.js ***!
-  \*************************/
+/***/ "./src/editor.js":
+/*!***********************!*\
+  !*** ./src/editor.js ***!
+  \***********************/
 /*! no exports provided */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -21199,48 +21199,28 @@ const osMap = {
   darwin: "macOS",
   linux: "Linux"
 };
-
-const getFile = _ => {
-  const file = document.getElementById('file').files[0];
-  return file;
-};
-
-document.getElementById("speed").addEventListener('change', ev => {});
-document.getElementById('file').addEventListener('change', ev => {
-  const file = getFile();
-
-  if (file) {
-    document.getElementById('preview').src = file.path;
-  }
-});
-document.querySelector("form").addEventListener("submit", _ => {
+var player = document.querySelector("video");
+document.getElementById("title").innerHTML = "Editor title";
+document.querySelector('form').addEventListener('submit', event => {
   event.preventDefault();
-  const file = getFile();
-
-  if (file) {
-    electron__WEBPACK_IMPORTED_MODULE_0__["ipcRenderer"].send("category:create", {
-      name: "test",
-      path: file.path,
-      color: "black",
-      shortcut: "C"
-    });
-  }
+  const file = document.getElementById('file').files[0];
+  console.log(file);
+  player.src = file.path;
+  player.play();
 });
-const repository = new _model_Repository__WEBPACK_IMPORTED_MODULE_3__["default"]();
-repository.fetchCategory().then(categories => {
-  let html = "";
-  categories.forEach(c => {
-    console.log(c);
-    html += `<div class="card mb-4 shadow-sm">
-      <div class="card-header">
-        <h4 class="my-0 font-weight-normal">${c.name}</h4>
-      </div>
-      <div class="card-body">
-        <img src="${path__WEBPACK_IMPORTED_MODULE_2___default.a.join(settings.icon, c.path)}" width="100", height="100" />
-      </div>
-    </div>`;
-  });
-  document.getElementById("category-container").innerHTML = html;
+document.getElementById("speed").addEventListener('input', ev => {
+  let rate = parseFloat(ev.target.value);
+  console.log(rate);
+  document.querySelector("video").playbackRate = rate;
+});
+electron__WEBPACK_IMPORTED_MODULE_0__["ipcRenderer"].on('video:metadata', (event, video) => {
+  const file = path__WEBPACK_IMPORTED_MODULE_2___default.a.join(settings.video, "test.mp4");
+  player.src = file;
+  player.play();
+  console.log(video.bufferedAmount);
+});
+electron__WEBPACK_IMPORTED_MODULE_0__["ipcRenderer"].on("video:rate", (event, args) => {
+  console.log(args);
 });
 
 /***/ }),
@@ -21484,4 +21464,4 @@ module.exports = require("path");
 /***/ })
 
 /******/ });
-//# sourceMappingURL=category.js.map
+//# sourceMappingURL=editor.js.map
