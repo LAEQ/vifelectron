@@ -41,11 +41,14 @@ class Settings {
 
     //Add default categories / collection
     jetpack.findAsync(path.join(__dirname, "resources", "json"), {matching: "*.json"}).then(r => {
-      r.forEach(d => {
-        const filename = path.basename(d)
+      r.forEach(file => {
+        const filename = path.basename(file)
         const dest = path.join(this.db, filename)
         if(jetpack.exists(dest) === false){
-          jetpack.copyAsync(d, dest)
+          jetpack.readAsync(file, "json").then(content => {
+            jetpack.file(dest, {mode: '0777', content: content})
+          })
+          // jetpack.copyAsync(d, dest, {mode: '777'})
         }
       })
     })
