@@ -12,19 +12,18 @@ import { videoMenuTemplate} from "./menu/video_menu_template";
 import createWindow from "./helpers/window";
 
 
-require('electron-reload')(__dirname, {
-  electron: path.join(__dirname, 'nodes_modules', '.bin', 'electron')
-})
-
 // Special module holding environment variables which you declared
 // in config/env_xxx.json file.
 import env from "env";
 import Settings from "./helpers/initialize";
 
-let setting = new Settings();
+if(env.name === "development"){
+  require('electron-reload')(__dirname, {
+    electron: path.join(__dirname, 'nodes_modules', '.bin', 'electron')
+  })
+}
 
-const src = path.join(setting.video, "test.mp4")
-const dst = path.join(setting.video, "test_dest.mp4")
+let setting = new Settings();
 
 const setApplicationMenu = () => {
   const menus = [videoMenuTemplate, editMenuTemplate];
@@ -34,9 +33,6 @@ const setApplicationMenu = () => {
   Menu.setApplicationMenu(Menu.buildFromTemplate(menus));
 };
 
-// Save userData in separate folders for each environment.
-// Thanks to this you can use production and development versions of the app
-// on same machine like those are two separate apps.
 if (env.name !== "production") {
   const userDataPath = app.getPath("userData");
   app.setPath("userData", `${userDataPath} (${env.name})`);
@@ -54,7 +50,7 @@ ipcMain.on('category:open', _ => {
   })
 
   categoryWindow.setMenu(null);
-  categoryWindow.webContents.openDevTools()
+  // categoryWindow.webContents.openDevTools()
   categoryWindow.loadURL(
     url.format({
       pathname: path.join(__dirname, "category.html"),
@@ -65,13 +61,26 @@ ipcMain.on('category:open', _ => {
 })
 
 
-ipcMain.on('editor:open', _ => {
+ipcMain.on('editor:open', (event, args) => {
   let editorWindow = createWindow("editor", {
     width: 1000,
     height: 600,
     webPreferences: {
       nodeIntegration: true
     }
+  });
+
+  editorWindow.setMenu(null);
+  editorWindow.webContents.openDevTools()
+  editorWindow.loadURL(
+    url.format({
+      pathname: path.join(__dirname, "editor.html"),
+      protocol: "file",
+      slashes: true,
+      query: {videoId: args}
+    })
+  ).then( _ => {
+    editorWindow.webContents.send("video:id", args)
   });
 
   let controlWindow = createWindow("controls", {
@@ -93,17 +102,6 @@ ipcMain.on('editor:open', _ => {
     })
   )
 
-  editorWindow.setMenu(null);
-  editorWindow.webContents.openDevTools()
-  editorWindow.loadURL(
-    url.format({
-      pathname: path.join(__dirname, "editor.html"),
-      protocol: "file",
-      slashes: true
-    })
-  ).then( _ => {
-    editorWindow.webContents.send("video:metadata", "test")
-  });
 })
 
 ipcMain.on('category:create', (event, category) => {
@@ -135,9 +133,9 @@ app.on("ready", () => {
 
   });
 
-  if (env.name === "development") {
+  // if (env.name === "development") {
     mainWindow.openDevTools();
-  }
+  // }
 });
 
 app.on("window-all-closed", () => {

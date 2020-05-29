@@ -1,22 +1,19 @@
+import "./scss/app.scss"
+
 import { remote, ipcRenderer } from "electron";
 import jetpack from "fs-jetpack";
 import path from 'path';
+import $ from 'jquery'
+import dt from 'datatables'
+
 import Repository from "./model/Repository";
 import Settings from "./helpers/initialize";
 
 const app = remote.app;
 const appDir = jetpack.cwd(app.getAppPath());
 const settings = new Settings();
-
-// Holy crap! This is browser window with HTML and stuff, but I can read
-// files from disk like it's node.js! Welcome to Electron world :)
 const manifest = appDir.read("package.json", "json");
-
-const osMap = {
-  win32: "Windows",
-  darwin: "macOS",
-  linux: "Linux"
-};
+const d = dt()
 
 const getFile = _ =>{
   const file = document.getElementById('file').files[0]
@@ -24,40 +21,79 @@ const getFile = _ =>{
   return file
 }
 
-document.getElementById("speed").addEventListener('change', ev => {
+const getName = _ => {
+  return document.getElementById('name').value
+}
 
-})
+
+let previewImage = document.getElementById("preview")
 
 document.getElementById('file').addEventListener('change', ev => {
   const file = getFile()
   if(file){
-    document.getElementById('preview').src = file.path
+    previewImage.src = file.path
+    previewImage.width = 100
+  } else {
+    previewImage.src = null
+    previewImage.width = 0
   }
 })
 
 document.querySelector("form").addEventListener("submit", _ => {
   event.preventDefault()
   const file = getFile()
+  const name = getName()
+
   if(file){
-    ipcRenderer.send("category:create", {name: "test", path: file.path, color: "black", shortcut: "C"})
+
+    alert("add validation file exist, category name exists, ...")
+
+    var form = document.getElementById('form-create');
+    var data = new FormData(form);
+
+    const category = repository.createCategory(data)
+    categories.push(category)
+
+    repository.save(categories, 'category.json')
+    var t = $('#table').DataTable();
+
+    t.row.add(category).draw(false)
   }
+
 })
 
 const repository = new Repository()
+let categories, table
 
-repository.fetchCategory().then(categories => {
-  let html = ""
-  categories.forEach(c => {
-    console.log(c)
-    html += `<div class="card mb-4 shadow-sm">
-      <div class="card-header">
-        <h4 class="my-0 font-weight-normal">${c.name}</h4>
-      </div>
-      <div class="card-body">
-        <img src="${path.join(settings.icon, c.path)}" width="100", height="100" />
-      </div>
-    </div>`
-  })
+repository.fetchCategory().then(result => {
+  categories = result
+  table = $('#table').DataTable({
+    "data": categories,
+    "columns": [
+      { "data": "path", title: "icon"},
+      { "data": "id", title: "id" },
+      { "data": "name", title: "name"},
+      { "data": "path", title: "file"},
+      { "data": null},
+      { "data": null}
+    ],
+    "columnDefs": [
+      {targets: 0, render: function(data) {
+        const src = path.join(settings.icon, data)
+        return `<img src="${src}" width="100" />`
+      }},
+      {"targets": -2, "data": null, "defaultContent": "<button class='btn btn-sm btn-outline-danger delete'>Delete</button>"},
+      {"targets": -1, "data": null, "defaultContent": "<button class='btn btn-sm btn-outline-primary'>Edit</button>"}
+    ]
+  });
+  $('#table tbody').on( 'click', 'button', function () {
+    var data = table.row( $(this).parents('tr') ).data();
 
-  document.getElementById("category-container").innerHTML = html
+    categories = categories.filter(c => c.id != data.id)
+    jetpack.removeAsync(path.join(settings.icon, data.path))
+    repository.save(categories, "category.json")
+    table.row($(this).parents('tr')).remove().draw();
+
+  });
 })
+

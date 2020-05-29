@@ -8,27 +8,42 @@
   <div class="container-fluid">
     <div class="row">
       <div class="col-12">
-        <h1>Latest</h1>
+        <h1>Video Section</h1>
         <div class="row">
-          <div class="col-6">
-            <img src="" alt="image" class="img-fluid colored" >
+          <div class="col-12">
+            <div class="row">
+              <div class="col-10">
+                <h2 class="h4">Last video</h2>
+              </div>
+              <div class="col-2">
+                <button id="add" class="btn btn-lg btn-success">Add a new video</button>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <img src="" alt="image" class="img-fluid colored" >
+              </div>
+              <div class="col-md-6">
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item">Video1.mp4</li>
+                  <li class="list-group-item">1h34min</li>
+                  <li class="list-group-item">Transport</li>
+                  <li class="list-group-item">365 </li>
+                  <li class="list-group-item">1h23</li>
+                  <li class="list-group-item"><button class="btn btn-primary">Continue</button> </li>
+                </ul>
+              </div>
+            </div>
           </div>
-          <div class="col-6">
-            <ul class="list-group list-group-flush">
-              <li class="list-group-item">Video1.mp4</li>
-              <li class="list-group-item">1h34min</li>
-              <li class="list-group-item">Transport</li>
-              <li class="list-group-item">365 </li>
-              <li class="list-group-item">1h23</li>
-              <li class="list-group-item"><button class="btn btn-primary">Continue</button> </li>
-            </ul>
-          </div>
+
         </div>
       </div>
     </div>
     <div class="row">
       <div class="col-12">
         <h2>Video list</h2>
+        <div class="alert alert-danger" id="message-box"></div>
         <table id="table" class="display" width="100%"></table>
 
 

@@ -1,6 +1,8 @@
 export class Collection{
-  constructor() {
-    this.id = 1
-    this.name = "transport"
+  constructor(obj) {
+    this.id = obj.id
+    this.name = obj.name
+    this.categories = obj.categories
+    this.default = obj.default
   }
 }

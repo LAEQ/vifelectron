@@ -1,53 +1,110 @@
-import { remote, ipcRenderer } from "electron";
+import { electron, remote, ipcRenderer } from "electron";
 import jetpack from "fs-jetpack";
 import path from 'path';
-import Repository from "./model/Repository";
 import Settings from "./helpers/initialize";
+import Repository from "./model/Repository";
+import {Point} from "./model/entity/Point";
 
 const app = remote.app;
+const ipc = remote.ipcMain
 const appDir = jetpack.cwd(app.getAppPath());
 const settings = new Settings();
+const repository = new Repository();
 
-// Holy crap! This is browser window with HTML and stuff, but I can read
-// files from disk like it's node.js! Welcome to Electron world :)
 const manifest = appDir.read("package.json", "json");
-
-const osMap = {
-  win32: "Windows",
-  darwin: "macOS",
-  linux: "Linux"
-};
-
 var player = document.querySelector("video")
+var catContainer = document.getElementById('icons')
 
-document.getElementById("title").innerHTML = "Editor title"
+const videoId = global.location.search.split("=")[1]
+const video = repository.fetchVideo(videoId)
+var points = []
 
-document.querySelector('form').addEventListener('submit', (event) => {
+repository.fetchPoints(videoId).then(r => {
+  points = r
+  player.src = video.path
+})
 
-  event.preventDefault()
-  const file = document.getElementById('file').files[0]
-  console.log(file)
+player.oncanplay = _ => {
+  player.play()
+}
 
-  player.src = file.path
+player.addEventListener("playing", _ => {
+  timerFetch()
+})
+
+
+var fetchTimer ;
+var saveTimer;
+
+function fetchPoint() {
+  // console.log("Total points: " + points.length)
+  document.getElementById("total").innerHTML = "Total points: " + points.length
+}
+
+function timerFetch(){
+  fetchPoint();
+
+  fetchTimer = setTimeout(timerFetch, 1000)
+}
+
+function timerSaveVideo(){
+
+}
+
+document.getElementById("title").innerHTML = video.name
+
+repository.fetchCategory().then(categories => {
+  let image = "";
+  categories.forEach(c => {
+    let filePath = path.join(settings.icon, c.path)
+    image += `<li class="list-group-item"><img src="${filePath}" id="${c.name}" class="" /></li>`
+
+  })
+  catContainer.innerHTML = image
+})
+
+//Controls
+document.getElementById("play").addEventListener("click", _ =>{
   player.play()
 })
 
-document.getElementById("speed").addEventListener('input', ev => {
-  let rate = parseFloat(ev.target.value)
-  console.log(rate)
-  document.querySelector("video").playbackRate = rate
+document.getElementById("stop").addEventListener("click", _ =>{
+  player.pause()
+  if(fetchTimer){
+    clearTimeout(fetchTimer)
+  }
 })
 
-ipcRenderer.on('video:metadata', (event, video) => {
-  const file = path.join(settings.video, "test.mp4")
+var mousePosition;
 
-  player.src = file
-  player.play()
-
-  console.log(video.bufferedAmount)
+player.addEventListener('mouseout', _ =>{
+  mousePosition = undefined
 })
 
+player.addEventListener('mousemove', ev => {
+  mousePosition = ev;
+})
 
-ipcRenderer.on("video:rate", ((event, args) => {
-  console.log(args)
+document.addEventListener('keydown', (ev => {
+  if(mousePosition){
+    const values = {
+      videoId: videoId,
+      categoryId: 1,
+      x: mousePosition.layerX,
+      y: mousePosition.layerY,
+      currentTime: player.currentTime
+    }
+    let point = new Point(values)
+
+    points.push(point)
+
+    video.total = points.length
+
+    ipcRenderer.send('point:add', point)
+  }
 }))
+
+ipc.on("point:add", (event, args) => {
+  repository.savePoints(points, videoId)
+})
+

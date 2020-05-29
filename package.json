@@ -9,7 +9,7 @@
   "homepage": "http://github.com/LAEQ/vifelectron",
   "main": "app/background.js",
   "build": {
-    "appId": "com.example.electron-boilerplate",
+    "appId": "org.laeq.vifelectron",
     "files": [
       "app/**/*",
       "node_modules/**/*",
@@ -33,16 +33,25 @@
   "dependencies": {
     "autoprefixer": "^9.8.0",
     "bootstrap": "^4.5.0",
+    "bootstrap-slider": "^10.6.2",
+    "collectionjs": "^0.3.4",
+    "d3-timer": "^1.0.10",
     "datatables": "^1.10.18",
     "exports-loader": "^0.7.0",
+    "ffbinaries": "^1.1.4",
     "file-loader": "^6.0.0",
+    "fluent-ffmpeg": "^2.1.2",
     "fs-jetpack": "^2.1.0",
     "jquery": "^3.5.1",
     "js-ffmpeg": "^0.0.26",
     "moment": "^2.26.0",
     "node-sass": "^4.14.1",
+    "popper.js": "^1.16.1",
     "postcss-loader": "^3.0.0",
-    "sass-loader": "^8.0.2"
+    "sass-loader": "^8.0.2",
+    "simple-thumbnail": "^1.6.5",
+    "svg-inline-loader": "^0.8.2",
+    "uuid": "^8.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.5.5",
