@@ -5,7 +5,7 @@
 
 import path from "path";
 import url from "url";
-import { app, Menu } from "electron";
+import { app, Menu, remote } from "electron";
 import { devMenuTemplate } from "./menu/dev_menu_template";
 import { editMenuTemplate } from "./menu/edit_menu_template"
 import { videoMenuTemplate} from "./menu/video_menu_template";
@@ -40,6 +40,8 @@ if (env.name !== "production") {
 
 const ipcMain = require('electron').ipcMain
 
+
+// Caegory section
 ipcMain.on('category:open', _ => {
   let categoryWindow = createWindow("category", {
     width: 1000,
@@ -57,10 +59,10 @@ ipcMain.on('category:open', _ => {
       protocol: "file",
       slashes: true
     })
-  ).then( _ => {});
+  ).then( _ => {}).catch(err => console.log(err))
 })
 
-
+//Video editor
 ipcMain.on('editor:open', (event, args) => {
   let editorWindow = createWindow("editor", {
     width: 1000,
@@ -79,10 +81,18 @@ ipcMain.on('editor:open', (event, args) => {
       slashes: true,
       query: {videoId: args}
     })
-  ).then( _ => {
-    editorWindow.webContents.send("video:id", args)
-  });
+  ).catch(err => {
+    console.log(err)
+  })
 
+})
+
+ipcMain.on('category:create', (event, category) => {
+  console.log(category)
+})
+
+// Controls video editor
+ipcMain.on('controls:show-hide', _ => {
   let controlWindow = createWindow("controls", {
     width: 350,
     height: 800,
@@ -100,15 +110,10 @@ ipcMain.on('editor:open', (event, args) => {
       protocol: "file",
       slashes: true
     })
-  )
-
+  ).catch(err => { console.log(err)})
 })
 
-ipcMain.on('category:create', (event, category) => {
-  console.log(category)
-})
-
-
+// Ready state
 app.on("ready", () => {
   setApplicationMenu();
 
@@ -131,13 +136,14 @@ app.on("ready", () => {
     })
   ).then( _ => {
 
-  });
+  }).catch(err => console.log(err))
 
   // if (env.name === "development") {
     mainWindow.openDevTools();
   // }
 });
 
+//Closing application
 app.on("window-all-closed", () => {
   app.quit();
 });

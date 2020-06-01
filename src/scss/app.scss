@@ -1,5 +1,6 @@
 @import "~bootstrap/scss/bootstrap";
 @import "~datatables/media/css/jquery.dataTables.min.css";
+@import "~bootstrap-slider/dist/css/bootstrap-slider.min.css";
 
 
 img.colored{
@@ -19,4 +20,8 @@ img.colored{
   color: black;
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
+}
+
+.slider {
+  width: 100% !important;
 }
