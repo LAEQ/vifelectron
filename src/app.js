@@ -42,6 +42,7 @@ repository.fetchVideos().then(result => {
       { "data": "duration", title: "duration"},
       { "data": "collection.name", title: "collection"},
       { "data": "total", title: "total"},
+      { "data": null},
       { "data": null}
     ],
     "columnDefs": [
@@ -49,14 +50,30 @@ repository.fetchVideos().then(result => {
           const src = path.join(settings.video, id)
           return `<img src="${src}.png" width="130" />`
         }},
-      {"targets": -1, "data": null, "defaultContent": "<button class='btn btn-sm btn-outline-primary'>Edit</button>"}
+      {"targets": -2, "data": null, "defaultContent": "<button class='btn btn-sm btn-outline-warning' data-action='info'>Info</button>"},
+      {"targets": -1, "data": null, "defaultContent": "<button class='btn btn-sm btn-outline-primary' data-action='edit'>Edit</button>"}
     ]
   });
 
-  $('#table tbody').on( 'click', 'button', function () {
+  $('#table tbody').on( 'click', 'button', function (evt) {
     var data = table.row( $(this).parents('tr') ).data();
 
-    ipcRenderer.send("editor:open", data.id)
+    console.log($(this).data('action'))
+
+    let evtName;
+
+    switch ($(this).data('action')) {
+
+      case "info":
+        evtName = "video:tool"
+        break;
+      default:
+        evtName: "editor:open"
+        break
+
+    }
+
+    ipcRenderer.send(evtName, data.id)
   });
 })
 

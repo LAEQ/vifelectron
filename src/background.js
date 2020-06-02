@@ -86,7 +86,30 @@ ipcMain.on('editor:open', (event, args) => {
   })
 
 })
+ipcMain.on('video:tool', (event, args) => {
+  let videoToolWindow = createWindow("tool", {
+    width: 1000,
+    height: 600,
+    webPreferences: {
+      nodeIntegration: true
+    }
+  });
 
+  videoToolWindow.setMenu(null);
+  videoToolWindow.webContents.openDevTools()
+  videoToolWindow.loadURL(
+    url.format({
+      pathname: path.join(__dirname, "tool.html"),
+      protocol: "file",
+      slashes: true,
+      query: {videoId: args}
+    })
+  ).catch(err => {
+    console.log(err)
+  })
+})
+
+//Category
 ipcMain.on('category:create', (event, category) => {
   console.log(category)
 })

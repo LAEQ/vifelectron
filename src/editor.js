@@ -162,7 +162,6 @@ const seek = (value) => {
     console.log(currentTime)
     player.currentTime = currentTime
   }
-
 }
 
 var mousePosition;
@@ -185,11 +184,9 @@ const addPoint = (values) => {
   repository.savePoints(points, videoId)
 }
 
-
 ipc.on("point:add", (event, args) => {
   repository.savePoints(points, videoId)
 })
-
 ipc.on('controls:rate', (event, args) => {
   player.playbackRate = args
 })

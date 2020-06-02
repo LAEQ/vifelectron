@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Video Tool</title>
+</head>
+<body>
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <h1 id="title" class="h2"></h1>
+      <hr />
+      <div class="row">
+        <div class="col-3">
+          <div id="img-container"></div>
+        </div>
+        <div class="col-lg-3">
+          <h2 class="h4 font-weight-bold border-bottom pb-2">File</h2>
+          <dl class="row" id="file-container">
+
+          </dl>
+        </div>
+        <div class="col-lg-3">
+          <h2 class="h4 font-weight-bold border-bottom pb-2">Video Stream</h2>
+          <dl class="row" id="video-container">
+
+          </dl>
+        </div>
+        <div class="col-lg-3">
+          <h2 class="h4 font-weight-bold border-bottom pb-2">Audio Stream</h2>
+          <dl class="row" id="audio-container">
+
+          </dl>
+        </div>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="col-12">
+          <h2>Conversion</h2>
+          <div class="row">
+            <div class="col-12">
+              <h3 class="h6 font-weight-bold pb-1 border-bottom">Video stream</h3>
+              <form>
+                <div class="form-row">
+                  <div class="form-group col-md-2">
+                    <label for="width">Size</label>
+                    <input type="text" class="form-control" name="width" id="width">
+                    <small class="form-text text-muted">
+                      Ex: 640x480, 640x?, ?x480, 50%
+                    </small>
+                  </div>
+                  <div class="form-group col-md-1">
+                    <label for="frames">Frame</label>
+                    <input  class="form-control" type="number" name="frames" id="frames">
+                  </div>
+                  <div class="form-group col-md-1">
+                    <label for="FPS">FPS</label>
+                    <input type="text" class="form-control" id="FPS">
+                  </div>
+                  <div class="form-group col-md-3">
+                    <h6 class="font-weight-bold">File format</h6>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="file_format" id="file_format_avi" value="avi">
+                      <label class="form-check-label" for="file_format_avi">Avi</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="file_format" id="file_format_mp4" value="mp4">
+                      <label class="form-check-label" for="file_format_mp4">mp4</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="file_format" id="file_format_mov" value="mp4">
+                      <label class="form-check-label" for="file_format_mov">mov</label>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-row">
+
+
+                </div>
+
+
+
+                <div class="form-row">
+                  <div class="form-group col-md-1"><button class="btn btn-sm btn-success" id="convert">Convert</button>
+                  </div>
+                  <div class="form-group col-md-11">
+                    <div class="progress">
+                      <div class="progress-bar" id="convertion-progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">25%</div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="tool.js"></script>
+</body>
+</html>
