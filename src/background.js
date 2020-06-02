@@ -23,6 +23,7 @@ if(env.name === "development"){
   })
 }
 
+let windows = {}
 let setting = new Settings();
 
 const setApplicationMenu = () => {
@@ -86,6 +87,44 @@ ipcMain.on('editor:open', (event, args) => {
   })
 
 })
+ipcMain.on('editor:timeline', (event, args) => {
+  if(windows["timeline"] === undefined){
+    let timelineWindow = createWindow('timeline', {
+      width: 1000,
+      height: 100,
+      webPreferences: {
+        nodeIntegration: true
+      }
+    })
+
+    timelineWindow.setMenu(null)
+    timelineWindow.loadURL(
+      url.format({
+        pathname: path.join(__dirname, "timeline.html"),
+        protocol: "file:",
+        slashes: true,
+        query: {videoId: args}
+      })
+    ).then( _ => {
+
+    }).catch(err => console.log(err))
+
+
+    // if (env.name === "development") {
+    timelineWindow.openDevTools();
+    // }
+
+    timelineWindow.on('close', _ =>{
+      windows['timeline'] = undefined
+      timelineWindow = null
+    })
+
+    windows['timeline'] = timelineWindow
+  }
+
+})
+
+//Video conversion
 ipcMain.on('video:tool', (event, args) => {
   let videoToolWindow = createWindow("tool", {
     width: 1000,
@@ -108,6 +147,7 @@ ipcMain.on('video:tool', (event, args) => {
     console.log(err)
   })
 })
+
 
 //Category
 ipcMain.on('category:create', (event, category) => {
@@ -149,7 +189,8 @@ app.on("ready", () => {
     webPreferences: {
       nodeIntegration: true
     }
-  });
+  })
+  windows['mainWindow'] = mainWindow;
 
   mainWindow.loadURL(
     url.format({

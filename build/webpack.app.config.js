@@ -10,7 +10,8 @@ module.exports = env => {
       category: "./src/category.js",
       editor: "./src/editor.js",
       tool: "./src/tool.js",
-      controls: "./src/javascript/controls.js"
+      controls: "./src/javascript/controls.js",
+      timeline: "./src/timeline.js"
     },
     output: {
       filename: "[name].js",

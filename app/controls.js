@@ -676,7 +676,7 @@ const ipc = electron__WEBPACK_IMPORTED_MODULE_1__["remote"].ipcMain;
 var rate = jquery__WEBPACK_IMPORTED_MODULE_2___default()("#rate").slider({
   precision: 2,
   min: 0.1,
-  max: 10,
+  max: 5,
   value: 1,
   step: 0.1
 });

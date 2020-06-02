@@ -81,7 +81,7 @@
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = "./src/editor.js");
+/******/ 	return __webpack_require__(__webpack_require__.s = "./src/timeline.js");
 /******/ })
 /************************************************************************/
 /******/ ({
@@ -650,532 +650,6 @@ module.exports = function (list, options) {
 
 /***/ }),
 
-/***/ "./src/editor.js":
-/*!***********************!*\
-  !*** ./src/editor.js ***!
-  \***********************/
-/*! no exports provided */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _scss_app_scss__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./scss/app.scss */ "./src/scss/app.scss");
-/* harmony import */ var _scss_app_scss__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_scss_app_scss__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! electron */ "electron");
-/* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(electron__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! fs-jetpack */ "fs-jetpack");
-/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(fs_jetpack__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! path */ "path");
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(path__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var _helpers_initialize__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./helpers/initialize */ "./src/helpers/initialize.js");
-/* harmony import */ var _model_Repository__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./model/Repository */ "./src/model/Repository.js");
-/* harmony import */ var _model_entity_Point__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./model/entity/Point */ "./src/model/entity/Point.js");
-/* harmony import */ var moment__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! moment */ "moment");
-/* harmony import */ var moment__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(moment__WEBPACK_IMPORTED_MODULE_7__);
-/* harmony import */ var d3__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! d3 */ "d3");
-/* harmony import */ var d3__WEBPACK_IMPORTED_MODULE_8___default = /*#__PURE__*/__webpack_require__.n(d3__WEBPACK_IMPORTED_MODULE_8__);
-/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! jquery */ "jquery");
-/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_9___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_9__);
-/* harmony import */ var bootstrap_slider__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! bootstrap-slider */ "bootstrap-slider");
-/* harmony import */ var bootstrap_slider__WEBPACK_IMPORTED_MODULE_10___default = /*#__PURE__*/__webpack_require__.n(bootstrap_slider__WEBPACK_IMPORTED_MODULE_10__);
-
-
-
-
-
-
-
-
-
-
-
-const app = electron__WEBPACK_IMPORTED_MODULE_1__["remote"].app;
-const ipc = electron__WEBPACK_IMPORTED_MODULE_1__["remote"].ipcMain;
-const appDir = fs_jetpack__WEBPACK_IMPORTED_MODULE_2___default.a.cwd(app.getAppPath());
-const settings = new _helpers_initialize__WEBPACK_IMPORTED_MODULE_4__["default"]();
-const repository = new _model_Repository__WEBPACK_IMPORTED_MODULE_5__["default"]();
-const manifest = appDir.read("package.json", "json");
-var player = document.querySelector("video");
-var overlay = document.getElementById("overlay");
-var g = d3__WEBPACK_IMPORTED_MODULE_8__["select"]("svg").append("g");
-var timer = document.getElementById("timer");
-var catContainer = document.getElementById('container-categories');
-var timeSlider = jquery__WEBPACK_IMPORTED_MODULE_9___default()("#slider").slider({
-  precision: 2
-});
-const videoId = global.location.search.split("=")[1];
-const video = repository.fetchVideo(videoId);
-let categories = [];
-let categoriesByKey = {};
-let categoriesById = {};
-let img = [];
-let points = [];
-document.getElementById("title").innerHTML = video.name;
-d3__WEBPACK_IMPORTED_MODULE_8__["select"]("g").selectAll(".icon").data([]).enter().append("svg:image").attr("xlink:href", p => categoriesById[p.categoryId].filePath).attr('class', 'icon').attr("width", 80).attr("height", 80).attr("x", 10).attr("y", 10);
-
-player.oncanplay = _ => {};
-
-const durationSort = (a, b) => {
-  return a.currentTime - b.currentTime;
-};
-
-const pointPromise = repository.fetchPoints(videoId);
-const categoryPromise = repository.fetchCategory();
-Promise.all([pointPromise, categoryPromise]).then(values => {
-  const r = values[0];
-  points = r.sort(durationSort);
-  player.src = video.path;
-  let image = "";
-  categories = values[1];
-  categories.forEach(c => {
-    categoriesByKey[c.shortcut] = c;
-    categoriesById[c.id] = c;
-    c.total = points.filter(p => p.categoryId == c.id).length;
-    c.filePath = path__WEBPACK_IMPORTED_MODULE_3___default.a.join(settings.icon, c.path);
-    image += `<div class="list-group-item">
-                <div class="d-flex w-100 justify-content-between">
-                  <img class="d-flex mb-1" width="70" src="${c.filePath}" id="${c.name}" ></img>
-                  <div class="h1 d-flex align-self-center" id="${c.id}-counter">${c.total}</div>
-                </div>
-                <small>${c.name} - <span class="border border-secondary p-1">${c.shortcut}</span></small>
-             </div>`;
-  });
-  catContainer.innerHTML = image;
-  electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send('editor:video:metadata:response', {
-    video: video,
-    points: points,
-    catById: categoriesById
-  });
-}); //Refresh and display icons
-
-const refresh = _ => {
-  const currentTime = player.currentTime;
-  const pointsToShow = points.filter(p => p.currentTime > currentTime - 10 && p.currentTime < currentTime);
-  let p = d3__WEBPACK_IMPORTED_MODULE_8__["select"]("g").selectAll(".icon").data(pointsToShow);
-  p.enter().append("svg:image").attr("xlink:href", p => categoriesById[p.categoryId].filePath).attr('class', 'icon').attr("width", 80).attr("height", 80).attr("x", p => p.x).attr("y", p => p.y);
-  p.exit().remove();
-};
-
-var timeupdate = event => {
-  const now = moment__WEBPACK_IMPORTED_MODULE_7__["duration"](player.currentTime);
-  timer.value = `${now.toISOString('H:m:s')} / ${video.duration.toLocaleString()}`;
-  timeSlider.slider('setValue', player.currentTime / video.duration * 100);
-  refresh();
-};
-
-player.addEventListener("timeupdate", timeupdate);
-player.addEventListener('playing', _ => {
-  electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send("editor:playing", player.currentTime);
-}); //Video controls
-
-document.getElementById("play").addEventListener("click", _ => {
-  player.play();
-});
-document.getElementById("stop").addEventListener("click", _ => {
-  player.pause();
-});
-document.getElementById("controls").addEventListener("click", _ => {
-  electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send("controls:show-hide");
-});
-document.getElementById("timeline").addEventListener("click", _ => {
-  electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send("editor:timeline", points);
-});
-document.addEventListener('keydown', ev => {
-  const category = categoriesByKey[ev.key.toUpperCase()];
-
-  if (mousePosition && category) {
-    const values = {
-      videoId: videoId,
-      categoryId: category.id,
-      x: mousePosition.layerX,
-      y: mousePosition.layerY,
-      currentTime: player.currentTime
-    };
-    category.total++;
-    refreshCount();
-    addPoint(values);
-  }
-}); //Slider
-
-timeSlider.on("slide", ev => {
-  seek(ev.value);
-});
-timeSlider.on('change', ev => {
-  seek(ev.value);
-}); //Video
-
-player.addEventListener('loadedmetadata', function () {
-  if (player.buffered.length === 0) return;
-  var bufferedSeconds = player.buffered.end(0) - player.buffered.start(0);
-  console.log(bufferedSeconds + ' seconds of video are ready to play!');
-});
-
-const seek = value => {
-  if (value > 0 && value < 100) {
-    const currentTime = Math.floor(value * player.duration / 100);
-    console.log(currentTime);
-    player.currentTime = currentTime;
-  }
-};
-
-var mousePosition;
-overlay.addEventListener('mouseout', _ => {
-  mousePosition = undefined;
-});
-overlay.addEventListener('mousemove', ev => {
-  mousePosition = ev;
-});
-
-const refreshCount = _ => {
-  categories.forEach(c => {
-    document.getElementById(`${c.id}-counter`).innerHTML = c.total;
-  });
-};
-
-const addPoint = values => {
-  const point = new _model_entity_Point__WEBPACK_IMPORTED_MODULE_6__["Point"](values);
-  points.push(point);
-  repository.savePoints(points, videoId);
-};
-
-ipc.on("point:add", (event, args) => {
-  repository.savePoints(points, videoId);
-});
-ipc.on('controls:rate', (event, args) => {
-  player.playbackRate = args;
-});
-ipc.on('editor:video:metadata:request', _ => {
-  console.log("editor:video:metadata:request");
-  electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send('editor:video:metadata:response', {
-    video: video,
-    points: points,
-    catById: categoriesById
-  });
-});
-
-/***/ }),
-
-/***/ "./src/helpers/initialize.js":
-/*!***********************************!*\
-  !*** ./src/helpers/initialize.js ***!
-  \***********************************/
-/*! exports provided: default */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! path */ "path");
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(path__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! fs-jetpack */ "fs-jetpack");
-/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(fs_jetpack__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var ffbinaries__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ffbinaries */ "ffbinaries");
-/* harmony import */ var ffbinaries__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(ffbinaries__WEBPACK_IMPORTED_MODULE_2__);
-
-
-
-
-var os = __webpack_require__(/*! os */ "os");
-
-var platform = `${os.platform() - os.arch()}`;
-var dest = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(__dirname, "binaries");
-
-class Settings {
-  constructor() {
-    this.homeDir = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(__webpack_require__(/*! os */ "os").homedir(), "vifeco");
-    this.db = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.homeDir, "db");
-    this.icon = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.homeDir, "icons");
-    this.video = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.homeDir, "video");
-    this.binaries = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.homeDir, "binaries");
-  }
-
-  getCategoryPath() {
-    return path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.db, "category.json");
-  }
-
-  getCollectionPath() {
-    return path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.db, "collection.json");
-  }
-
-  getVideoPath() {
-    return path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.db, "video.json");
-  }
-
-  getFfmpegPath() {
-    return path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.binaries, "ffmpeg");
-  }
-
-  getFfprobePath() {
-    return path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.binaries, 'ffprobe');
-  }
-
-  init() {
-    const dirs = [this.homeDir, this.db, this.icon, this.video, this.binaries];
-    dirs.forEach(d => fs_jetpack__WEBPACK_IMPORTED_MODULE_1___default.a.dir(d)); //Add default categories / collection
-
-    fs_jetpack__WEBPACK_IMPORTED_MODULE_1___default.a.findAsync(path__WEBPACK_IMPORTED_MODULE_0___default.a.join(__dirname, "resources", "json"), {
-      matching: "*.json"
-    }).then(r => {
-      r.forEach(file => {
-        const filename = path__WEBPACK_IMPORTED_MODULE_0___default.a.basename(file);
-        const dest = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.db, filename);
-
-        if (fs_jetpack__WEBPACK_IMPORTED_MODULE_1___default.a.exists(dest) === false) {
-          fs_jetpack__WEBPACK_IMPORTED_MODULE_1___default.a.readAsync(file, "json").then(content => {
-            fs_jetpack__WEBPACK_IMPORTED_MODULE_1___default.a.file(dest, {
-              mode: '0777',
-              content: content
-            });
-          }); // jetpack.copyAsync(d, dest, {mode: '777'})
-        }
-      });
-    }); //Add default icons
-
-    fs_jetpack__WEBPACK_IMPORTED_MODULE_1___default.a.findAsync(path__WEBPACK_IMPORTED_MODULE_0___default.a.join(__dirname, "resources", "icons"), {
-      matching: "*.svg"
-    }).then(r => {
-      r.forEach(f => {
-        const filename = path__WEBPACK_IMPORTED_MODULE_0___default.a.basename(f);
-        const dest = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.icon, filename);
-
-        if (fs_jetpack__WEBPACK_IMPORTED_MODULE_1___default.a.exists(dest) === false) {
-          fs_jetpack__WEBPACK_IMPORTED_MODULE_1___default.a.copyAsync(f, dest);
-        }
-      });
-    });
-
-    if (fs_jetpack__WEBPACK_IMPORTED_MODULE_1___default.a.exists(this.getFfmpegPath()) === false) {
-      ffbinaries__WEBPACK_IMPORTED_MODULE_2__["downloadBinaries"](['ffmpeg', 'ffprobe'], {
-        platform: platform,
-        quiet: true,
-        destination: this.binaries
-      }, function (err) {
-        console.log('success');
-      });
-    }
-  }
-
-}
-
-/* harmony default export */ __webpack_exports__["default"] = (Settings);
-
-/***/ }),
-
-/***/ "./src/model/Repository.js":
-/*!*********************************!*\
-  !*** ./src/model/Repository.js ***!
-  \*********************************/
-/*! exports provided: default */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _helpers_initialize__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../helpers/initialize */ "./src/helpers/initialize.js");
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! path */ "path");
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(path__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! uuid */ "uuid");
-/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(uuid__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! fs-jetpack */ "fs-jetpack");
-/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(fs_jetpack__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var _entity_Category__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./entity/Category */ "./src/model/entity/Category.js");
-/* harmony import */ var _entity_Collection__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./entity/Collection */ "./src/model/entity/Collection.js");
-/* harmony import */ var _entity_Video__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./entity/Video */ "./src/model/entity/Video.js");
-/* harmony import */ var _entity_Point__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./entity/Point */ "./src/model/entity/Point.js");
-
-
-
-
-
-
-
-
-
-class Repository {
-  constructor() {
-    this.settings = new _helpers_initialize__WEBPACK_IMPORTED_MODULE_0__["default"]();
-  }
-
-  async fetchCategory() {
-    const file = this.settings.getCategoryPath();
-    let result = [];
-
-    if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
-      await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
-        result = r.map(category => {
-          return new _entity_Category__WEBPACK_IMPORTED_MODULE_4__["Category"](category);
-        });
-      });
-      return result;
-    } else {
-      return result;
-    }
-  }
-
-  async fetchVideos() {
-    const file = this.settings.getVideoPath();
-    let result = [];
-
-    if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
-      await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
-        result = r.map(video => {
-          return new _entity_Video__WEBPACK_IMPORTED_MODULE_6__["Video"](video);
-        });
-      });
-      return result;
-    } else {
-      return result;
-    }
-  }
-
-  fetchVideo(id) {
-    return fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.read(this.settings.getVideoPath(), "json").filter(obj => obj.id === id).map(v => new _entity_Video__WEBPACK_IMPORTED_MODULE_6__["Video"](v))[0];
-  }
-
-  async fetchPoints(videoId) {
-    let result = [];
-    const points = fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.read(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.video, `${videoId}.json`), "json");
-    return points.map(obj => {
-      return new _entity_Point__WEBPACK_IMPORTED_MODULE_7__["Point"](obj);
-    });
-  }
-
-  defaultCollection() {
-    const collections = fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.read(this.settings.getCollectionPath(), "json");
-    return collections.filter(c => c.default).map(c => new _entity_Collection__WEBPACK_IMPORTED_MODULE_5__["Collection"](c))[0];
-  }
-
-  createCategory(data) {
-    //Move file
-    const filename = path__WEBPACK_IMPORTED_MODULE_1___default.a.basename(data.get('file').path);
-    console.log(data.get('file'));
-    const uuid = Object(uuid__WEBPACK_IMPORTED_MODULE_2__["v4"])();
-    fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.copy(data.get('file').path, path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, filename));
-    const values = {
-      id: uuid,
-      name: data.get('name'),
-      path: filename,
-      shortcut: 'Z'
-    };
-    const category = new _entity_Category__WEBPACK_IMPORTED_MODULE_4__["Category"](values);
-    return category;
-  }
-
-  save(obj, filename) {
-    fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.write(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.db, filename), obj);
-  }
-
-  savePoints(points, videoId) {
-    fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.write(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.video, `${videoId}.json`), points);
-  }
-
-}
-
-/* harmony default export */ __webpack_exports__["default"] = (Repository);
-
-/***/ }),
-
-/***/ "./src/model/entity/Category.js":
-/*!**************************************!*\
-  !*** ./src/model/entity/Category.js ***!
-  \**************************************/
-/*! exports provided: Category */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Category", function() { return Category; });
-class Category {
-  constructor(obj) {
-    this.id = obj.id;
-    this.name = obj.name;
-    this.path = obj.path;
-    this.shortcut = obj.shortcut;
-  }
-
-}
-
-class Collection {
-  constructor() {}
-
-}
-
-
-
-/***/ }),
-
-/***/ "./src/model/entity/Collection.js":
-/*!****************************************!*\
-  !*** ./src/model/entity/Collection.js ***!
-  \****************************************/
-/*! exports provided: Collection */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Collection", function() { return Collection; });
-class Collection {
-  constructor(obj) {
-    this.id = obj.id;
-    this.name = obj.name;
-    this.categories = obj.categories;
-    this.default = obj.default;
-  }
-
-}
-
-/***/ }),
-
-/***/ "./src/model/entity/Point.js":
-/*!***********************************!*\
-  !*** ./src/model/entity/Point.js ***!
-  \***********************************/
-/*! exports provided: Point */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Point", function() { return Point; });
-class Point {
-  constructor(obj) {
-    this.videoId = obj.videoId;
-    this.categoryId = obj.categoryId;
-    this.x = obj.x;
-    this.y = obj.y;
-    this.currentTime = obj.currentTime;
-  }
-
-}
-
-/***/ }),
-
-/***/ "./src/model/entity/Video.js":
-/*!***********************************!*\
-  !*** ./src/model/entity/Video.js ***!
-  \***********************************/
-/*! exports provided: Video */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Video", function() { return Video; });
-/* harmony import */ var _Collection__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Collection */ "./src/model/entity/Collection.js");
-/* harmony import */ var moment__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! moment */ "moment");
-/* harmony import */ var moment__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(moment__WEBPACK_IMPORTED_MODULE_1__);
-
-
-class Video {
-  constructor(obj) {
-    this.id = obj.id;
-    this.name = obj.name;
-    this.path = obj.path;
-    this.duration = obj.duration;
-    this.collection = new _Collection__WEBPACK_IMPORTED_MODULE_0__["Collection"](obj.collection);
-    this.total = obj.total;
-  }
-
-}
-
-/***/ }),
-
 /***/ "./src/scss/app.scss":
 /*!***************************!*\
   !*** ./src/scss/app.scss ***!
@@ -1205,14 +679,92 @@ module.exports = content.locals || {};
 
 /***/ }),
 
-/***/ "bootstrap-slider":
-/*!***********************************!*\
-  !*** external "bootstrap-slider" ***!
-  \***********************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
+/***/ "./src/timeline.js":
+/*!*************************!*\
+  !*** ./src/timeline.js ***!
+  \*************************/
+/*! no exports provided */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
-module.exports = require("bootstrap-slider");
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _scss_app_scss__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./scss/app.scss */ "./src/scss/app.scss");
+/* harmony import */ var _scss_app_scss__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_scss_app_scss__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var d3__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! d3 */ "d3");
+/* harmony import */ var d3__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(d3__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! electron */ "electron");
+/* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(electron__WEBPACK_IMPORTED_MODULE_2__);
+
+
+
+const ipc = electron__WEBPACK_IMPORTED_MODULE_2__["remote"].ipcMain;
+var svg = d3__WEBPACK_IMPORTED_MODULE_1__["select"]('svg');
+const scale = svg.append('g').attr('class', 'scale');
+var scaleBar = [];
+var settings;
+var video;
+var points;
+var catById;
+var icons = {};
+var scaleLength = 0;
+var scaleDuration = 0;
+
+var init = () => {
+  settings = {
+    width: parseInt(svg.style('width').replace('px', ''), 10),
+    height: parseInt(svg.style('height').replace('px', ''), 10)
+  };
+  settings.middle = settings.width / 2;
+};
+
+init();
+window.addEventListener('resize', init);
+var g = d3__WEBPACK_IMPORTED_MODULE_1__["select"]('g');
+
+const format = value => {
+  if (value < 60) return value;
+  const m = Math.floor(value / 60);
+  const s = value - m * 60;
+  return `${m}'${s}`;
+};
+
+const getY = index => {
+  console.log(index, index % 5 * 30);
+  return index % 5 * 25 + 15;
+};
+
+ipc.on('editor:video:metadata:response', (event, args) => {
+  video = args.video;
+  points = args.points;
+  catById = args.catById;
+
+  for (let i = 0; i < video.duration + 10; i += 10) {
+    scaleBar.push({
+      x1: i * 10 + settings.middle,
+      x2: i * 10 + settings.middle,
+      y1: 0,
+      y2: settings.height - 20,
+      value: i
+    });
+  }
+
+  scaleLength = 10 * video.duration;
+  scaleDuration = video.duration;
+  d3__WEBPACK_IMPORTED_MODULE_1__["select"]('svg').append('g').append("line").attr('class', 'origin').attr("x1", settings.middle).attr("x2", settings.middle).attr("y1", 0).attr("y2", settings.height);
+  var t = scale.selectAll("line").data(scaleBar).enter();
+  t.append("line").attr('class', 'scale').attr("x1", d => d.x1).attr("y1", d => d.y1).attr("x2", d => d.x2).attr("y2", d => d.y2);
+  t.append('text').attr('text-rendering', "optimizeLegibility").attr('class', 'scale-text').attr('x', d => d.x1 - 2).attr("y", d => settings.height - 5).text(d => format(d.value));
+  console.log(points);
+  scale.selectAll("circle").data(points).enter().append("svg:image").attr("xlink:href", p => catById[p.categoryId].filePath).attr('class', 'icon').attr("width", 20).attr("height", 20).attr('x', d => d.currentTime * 10 + settings.middle).attr("y", (d, i) => getY(i));
+});
+ipc.on('editor:playing', (event, args) => {
+  const x = video.duration * -100 / 10;
+  d3__WEBPACK_IMPORTED_MODULE_1__["select"]('.scale').transition().ease(d3__WEBPACK_IMPORTED_MODULE_1__["easeLinear"]).attr('transform', `translate(${x}, 00)`).duration(video.duration * 1000);
+});
+ipc.on("editor:stopped", _ => {
+  console.log("stopped");
+});
+electron__WEBPACK_IMPORTED_MODULE_2__["ipcRenderer"].send('editor:video:metadata:request'); //Draw scale
 
 /***/ }),
 
@@ -1236,84 +788,7 @@ module.exports = require("d3");
 
 module.exports = require("electron");
 
-/***/ }),
-
-/***/ "ffbinaries":
-/*!*****************************!*\
-  !*** external "ffbinaries" ***!
-  \*****************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-module.exports = require("ffbinaries");
-
-/***/ }),
-
-/***/ "fs-jetpack":
-/*!*****************************!*\
-  !*** external "fs-jetpack" ***!
-  \*****************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-module.exports = require("fs-jetpack");
-
-/***/ }),
-
-/***/ "jquery":
-/*!*************************!*\
-  !*** external "jquery" ***!
-  \*************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-module.exports = require("jquery");
-
-/***/ }),
-
-/***/ "moment":
-/*!*************************!*\
-  !*** external "moment" ***!
-  \*************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-module.exports = require("moment");
-
-/***/ }),
-
-/***/ "os":
-/*!*********************!*\
-  !*** external "os" ***!
-  \*********************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-module.exports = require("os");
-
-/***/ }),
-
-/***/ "path":
-/*!***********************!*\
-  !*** external "path" ***!
-  \***********************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-module.exports = require("path");
-
-/***/ }),
-
-/***/ "uuid":
-/*!***********************!*\
-  !*** external "uuid" ***!
-  \***********************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-module.exports = require("uuid");
-
 /***/ })
 
 /******/ });
-//# sourceMappingURL=editor.js.map
+//# sourceMappingURL=timeline.js.map

@@ -27,7 +27,7 @@
       height: 100%;
       width: 100%;
       opacity: .4;
-      background-color: red;
+      /*background-color: red;*/
     }
   </style>
 </head>
@@ -39,7 +39,7 @@
         <h6 id="total">Total: </h6>
       </div>
 
-      <div class="col-lg-9">
+      <div class="col-lg-9 mb-3">
         <div class="row">
           <div class="col-12">
             <div class="video-container">
@@ -51,14 +51,15 @@
           </div>
         </div>
         <div class="row mt-3">
-          <div class="col-lg-2 col-md-3">
+          <div class="col-xl-3">
             <div class="btn-group" role="group" >
               <button id="stop" type="button" class="btn btn-danger">Stop</button>
               <button id="play" type="button" class="btn btn-success">Play</button>
-              <button id="controls" type="button" class="btn btn-primary">Controls</button>
+              <button id="timeline" type="button" class="btn btn-outline-info">Timeline</button>
+              <button id="controls" type="button" class="btn btn-outline-primary">Controls</button>
             </div>
           </div>
-          <div class="col-lg-10 col-md-9">
+          <div class="col-xl-9 col-12">
             <form class="row">
               <div class="col-9">
                 <input id="slider" value="0" class="form-control" type="text" data-slider-min="0" data-slider-max="100" data-slider-step="1" data-slider-value="0"/>

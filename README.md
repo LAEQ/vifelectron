@@ -104,3 +104,8 @@ You can package your app cross-platform from a single operating system, [electro
 # Add bootstrap
 
 https://stevenwestmoreland.com/2018/01/how-to-include-bootstrap-in-your-project-with-webpack.html
+
+# Video buffering
+https://developers.google.com/web/fundamentals/media/fast-playback-with-video-preload
+https://developer.aliyun.com/mirror/npm/package/fluent-ffmpeg
+https://github.com/fluent-ffmpeg/node-fluent-ffmpeg

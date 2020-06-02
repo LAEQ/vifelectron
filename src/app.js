@@ -24,15 +24,10 @@ var settings = new Settings()
 var repository = new Repository()
 var videos, table;
 
-var latestVideo
-
 repository.fetchVideos().then(result => {
   videos = result;
 
   showLastVideo(result)
-
-
-  // showLastVideo(result[0])
 
   table = $('#table').DataTable({
     "data": videos,
@@ -42,7 +37,6 @@ repository.fetchVideos().then(result => {
       { "data": "duration", title: "duration"},
       { "data": "collection.name", title: "collection"},
       { "data": "total", title: "total"},
-      { "data": null},
       { "data": null}
     ],
     "columnDefs": [
@@ -50,15 +44,16 @@ repository.fetchVideos().then(result => {
           const src = path.join(settings.video, id)
           return `<img src="${src}.png" width="130" />`
         }},
-      {"targets": -2, "data": null, "defaultContent": "<button class='btn btn-sm btn-outline-warning' data-action='info'>Info</button>"},
-      {"targets": -1, "data": null, "defaultContent": "<button class='btn btn-sm btn-outline-primary' data-action='edit'>Edit</button>"}
+      {"targets": -1, "data": null, "defaultContent": "" +
+          "<button type='button' class='btn btn-sm btn-warning mr-2' data-action='info'>Info</button>" +
+          "<button type='button' class='btn btn-sm btn-info mr-2' data-action='edit'>Edit</button>"}
     ]
   });
 
   $('#table tbody').on( 'click', 'button', function (evt) {
     var data = table.row( $(this).parents('tr') ).data();
 
-    console.log($(this).data('action'))
+    console.log(data)
 
     let evtName;
 
@@ -68,9 +63,8 @@ repository.fetchVideos().then(result => {
         evtName = "video:tool"
         break;
       default:
-        evtName: "editor:open"
+        evtName = "editor:open"
         break
-
     }
 
     ipcRenderer.send(evtName, data.id)

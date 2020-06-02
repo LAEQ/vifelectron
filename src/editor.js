@@ -32,9 +32,7 @@ let categoriesByKey = {}
 let categoriesById = {}
 let img = []
 
-let duration
 let points = []
-
 
 document.getElementById("title").innerHTML = video.name
 d3.select("g")
@@ -50,22 +48,26 @@ d3.select("g")
   .attr("y", 10);
 
 
-repository.fetchPoints(videoId).then(r => {
-  points = r
-  player.src = video.path
 
-})
 
 player.oncanplay = _ => {
-  player.play()
-  duration = moment.duration(player.duration)
+
 }
 
+const durationSort = (a, b) => {
+  return a.currentTime - b.currentTime
+}
+const pointPromise = repository.fetchPoints(videoId)
+const categoryPromise = repository.fetchCategory()
 
-repository.fetchCategory().then(cats => {
+Promise.all([pointPromise, categoryPromise]).then(values => {
+  const r = values[0]
+  points = r.sort(durationSort)
+  player.src = video.path
+
   let image = "";
-  categories = cats;
-  cats.forEach(c => {
+  categories = values[1];
+  categories.forEach(c => {
     categoriesByKey[c.shortcut] = c
     categoriesById[c.id] = c
     c.total = points.filter(p => p.categoryId == c.id).length
@@ -80,8 +82,11 @@ repository.fetchCategory().then(cats => {
 
   })
   catContainer.innerHTML = image
-})
 
+  ipcRenderer.send('editor:video:metadata:response',
+    {video: video, points: points, catById: categoriesById})
+
+})
 
 //Refresh and display icons
 const refresh = _ => {
@@ -105,14 +110,16 @@ const refresh = _ => {
 var timeupdate = (event) => {
   const now = moment.duration(player.currentTime)
 
-  timer.value = `${now.toISOString('H:m:s')} / ${duration.toLocaleString()}`
+  timer.value = `${now.toISOString('H:m:s')} / ${video.duration.toLocaleString()}`
   timeSlider.slider('setValue', player.currentTime / video.duration * 100);
 
   refresh()
 }
 
 player.addEventListener("timeupdate", timeupdate)
-
+player.addEventListener('playing', _ => {
+  ipcRenderer.send("editor:playing", player.currentTime)
+})
 
 //Video controls
 document.getElementById("play").addEventListener("click", _ =>{
@@ -120,12 +127,13 @@ document.getElementById("play").addEventListener("click", _ =>{
 })
 document.getElementById("stop").addEventListener("click", _ =>{
   player.pause()
-  if(fetchTimer){
-    clearTimeout(fetchTimer)
-  }
 })
 document.getElementById("controls").addEventListener("click", _ => {
   ipcRenderer.send("controls:show-hide")
+})
+
+document.getElementById("timeline").addEventListener("click", _ => {
+  ipcRenderer.send("editor:timeline", points)
 })
 document.addEventListener('keydown', (ev => {
   const category = categoriesByKey[ev.key.toUpperCase()]
@@ -149,13 +157,19 @@ document.addEventListener('keydown', (ev => {
 timeSlider.on("slide", ev => {
   seek(ev.value)
 })
-
 timeSlider.on('change', ev => {
   seek(ev.value)
 })
 
 
 //Video
+player.addEventListener('loadedmetadata', function() {
+  if (player.buffered.length === 0) return;
+
+  var bufferedSeconds = player.buffered.end(0) - player.buffered.start(0);
+  console.log(bufferedSeconds + ' seconds of video are ready to play!');
+});
+
 const seek = (value) => {
   if(value > 0 && value < 100){
     const currentTime = Math.floor(value * player.duration / 100)
@@ -189,4 +203,9 @@ ipc.on("point:add", (event, args) => {
 })
 ipc.on('controls:rate', (event, args) => {
   player.playbackRate = args
+})
+
+ipc.on('editor:video:metadata:request', _ => {
+  console.log("editor:video:metadata:request")
+  ipcRenderer.send('editor:video:metadata:response', {video: video, points: points, catById: categoriesById})
 })
