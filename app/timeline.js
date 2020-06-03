@@ -708,13 +708,18 @@ var catById;
 var icons = {};
 var scaleLength = 0;
 var scaleDuration = 0;
+var transition;
+var yIndex = 0;
 
 var init = () => {
   settings = {
     width: parseInt(svg.style('width').replace('px', ''), 10),
-    height: parseInt(svg.style('height').replace('px', ''), 10)
+    height: parseInt(svg.style('height').replace('px', ''), 10),
+    iconSize: 20,
+    iconMargin: 15
   };
   settings.middle = settings.width / 2;
+  settings.nbrPerHeight = Math.round(settings.height / (settings.iconSize + 5));
 };
 
 init();
@@ -729,8 +734,19 @@ const format = value => {
 };
 
 const getY = index => {
-  console.log(index, index % 5 * 30);
-  return index % 5 * 25 + 15;
+  return index % settings.nbrPerHeight * settings.iconSize + settings.iconMargin;
+};
+
+const display = () => {
+  scale.selectAll(".icon").data(points).enter().append("image").attr("xlink:href", p => catById[p.categoryId].path).attr("width", settings.iconSize).attr("height", settings.iconSize).attr('x', d => d.currentTime * 10 + settings.middle).attr("y", (d, i) => getY(i));
+  d3__WEBPACK_IMPORTED_MODULE_1__["selectAll"]("image").on("mouseover", function (p) {
+    d3__WEBPACK_IMPORTED_MODULE_1__["select"](this).attr('xlink:href', catById[p.categoryId].pathDanger);
+    electron__WEBPACK_IMPORTED_MODULE_2__["ipcRenderer"].send('timeline:icon:mouseover', p);
+  });
+  d3__WEBPACK_IMPORTED_MODULE_1__["selectAll"]("image").on("mouseout", function (p) {
+    d3__WEBPACK_IMPORTED_MODULE_1__["select"](this).attr('xlink:href', catById[p.categoryId].path);
+    electron__WEBPACK_IMPORTED_MODULE_2__["ipcRenderer"].send('timeline:icon:mouseout', p);
+  });
 };
 
 ipc.on('editor:video:metadata:response', (event, args) => {
@@ -754,15 +770,22 @@ ipc.on('editor:video:metadata:response', (event, args) => {
   var t = scale.selectAll("line").data(scaleBar).enter();
   t.append("line").attr('class', 'scale').attr("x1", d => d.x1).attr("y1", d => d.y1).attr("x2", d => d.x2).attr("y2", d => d.y2);
   t.append('text').attr('text-rendering', "optimizeLegibility").attr('class', 'scale-text').attr('x', d => d.x1 - 2).attr("y", d => settings.height - 5).text(d => format(d.value));
-  console.log(points);
-  scale.selectAll("circle").data(points).enter().append("svg:image").attr("xlink:href", p => catById[p.categoryId].filePath).attr('class', 'icon').attr("width", 20).attr("height", 20).attr('x', d => d.currentTime * 10 + settings.middle).attr("y", (d, i) => getY(i));
+  display();
 });
 ipc.on('editor:playing', (event, args) => {
   const x = video.duration * -100 / 10;
-  d3__WEBPACK_IMPORTED_MODULE_1__["select"]('.scale').transition().ease(d3__WEBPACK_IMPORTED_MODULE_1__["easeLinear"]).attr('transform', `translate(${x}, 00)`).duration(video.duration * 1000);
+  transition = d3__WEBPACK_IMPORTED_MODULE_1__["select"]('.scale').transition().ease(d3__WEBPACK_IMPORTED_MODULE_1__["easeLinear"]).attr('transform', `translate(${x}, 00)`).duration(video.duration * 1000);
+  console.log(transition);
 });
-ipc.on("editor:stopped", _ => {
-  console.log("stopped");
+ipc.on("editor:stop", _ => {
+  scale.interrupt();
+});
+ipc.on("editor:oncanplay", (event, args) => {
+  console.log(args);
+});
+ipc.on("editor:point:add", (event, args) => {
+  points.push(args);
+  display();
 });
 electron__WEBPACK_IMPORTED_MODULE_2__["ipcRenderer"].send('editor:video:metadata:request'); //Draw scale
 

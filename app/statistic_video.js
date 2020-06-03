@@ -81,7 +81,7 @@
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = "./src/category.js");
+/******/ 	return __webpack_require__(__webpack_require__.s = "./src/statistic_video.js");
 /******/ })
 /************************************************************************/
 /******/ ({
@@ -650,130 +650,6 @@ module.exports = function (list, options) {
 
 /***/ }),
 
-/***/ "./src/category.js":
-/*!*************************!*\
-  !*** ./src/category.js ***!
-  \*************************/
-/*! no exports provided */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _scss_app_scss__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./scss/app.scss */ "./src/scss/app.scss");
-/* harmony import */ var _scss_app_scss__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_scss_app_scss__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! electron */ "electron");
-/* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(electron__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! fs-jetpack */ "fs-jetpack");
-/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(fs_jetpack__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! path */ "path");
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(path__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! jquery */ "jquery");
-/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_4__);
-/* harmony import */ var datatables__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! datatables */ "datatables");
-/* harmony import */ var datatables__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(datatables__WEBPACK_IMPORTED_MODULE_5__);
-/* harmony import */ var _model_Repository__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./model/Repository */ "./src/model/Repository.js");
-/* harmony import */ var _helpers_initialize__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./helpers/initialize */ "./src/helpers/initialize.js");
-
-
-
-
-
-
-
-
-const app = electron__WEBPACK_IMPORTED_MODULE_1__["remote"].app;
-const appDir = fs_jetpack__WEBPACK_IMPORTED_MODULE_2___default.a.cwd(app.getAppPath());
-const settings = new _helpers_initialize__WEBPACK_IMPORTED_MODULE_7__["default"]();
-const manifest = appDir.read("package.json", "json");
-const d = datatables__WEBPACK_IMPORTED_MODULE_5___default()();
-
-const getFile = _ => {
-  const file = document.getElementById('file').files[0];
-  return file;
-};
-
-const getName = _ => {
-  return document.getElementById('name').value;
-};
-
-let previewImage = document.getElementById("preview");
-document.getElementById('file').addEventListener('change', ev => {
-  const file = getFile();
-
-  if (file) {
-    previewImage.src = file.path;
-    previewImage.width = 100;
-  } else {
-    previewImage.src = null;
-    previewImage.width = 0;
-  }
-});
-document.querySelector("form").addEventListener("submit", _ => {
-  event.preventDefault();
-  const file = getFile();
-  const name = getName();
-
-  if (file) {
-    alert("add validation file exist, category name exists, ...");
-    var form = document.getElementById('form-create');
-    var data = new FormData(form);
-    const category = repository.createCategory(data);
-    categories.push(category);
-    repository.save(categories, 'category.json');
-    var t = jquery__WEBPACK_IMPORTED_MODULE_4___default()('#table').DataTable();
-    t.row.add(category).draw(false);
-  }
-});
-const repository = new _model_Repository__WEBPACK_IMPORTED_MODULE_6__["default"]();
-let categories, table;
-repository.fetchCategory().then(result => {
-  categories = result;
-  table = jquery__WEBPACK_IMPORTED_MODULE_4___default()('#table').DataTable({
-    "data": categories,
-    "columns": [{
-      "data": "path",
-      title: "icon"
-    }, {
-      "data": "id",
-      title: "id"
-    }, {
-      "data": "name",
-      title: "name"
-    }, {
-      "data": "path",
-      title: "file"
-    }, {
-      "data": null
-    }, {
-      "data": null
-    }],
-    "columnDefs": [{
-      targets: 0,
-      render: function (data) {
-        const src = path__WEBPACK_IMPORTED_MODULE_3___default.a.join(settings.icon, data);
-        return `<img src="${src}" width="100" />`;
-      }
-    }, {
-      "targets": -2,
-      "data": null,
-      "defaultContent": "<button class='btn btn-sm btn-outline-danger delete'>Delete</button>"
-    }, {
-      "targets": -1,
-      "data": null,
-      "defaultContent": "<button class='btn btn-sm btn-outline-primary'>Edit</button>"
-    }]
-  });
-  jquery__WEBPACK_IMPORTED_MODULE_4___default()('#table tbody').on('click', 'button', function () {
-    var data = table.row(jquery__WEBPACK_IMPORTED_MODULE_4___default()(this).parents('tr')).data();
-    categories = categories.filter(c => c.id != data.id);
-    fs_jetpack__WEBPACK_IMPORTED_MODULE_2___default.a.removeAsync(path__WEBPACK_IMPORTED_MODULE_3___default.a.join(settings.icon, data.path));
-    repository.save(categories, "category.json");
-    table.row(jquery__WEBPACK_IMPORTED_MODULE_4___default()(this).parents('tr')).remove().draw();
-  });
-});
-
-/***/ }),
-
 /***/ "./src/helpers/initialize.js":
 /*!***********************************!*\
   !*** ./src/helpers/initialize.js ***!
@@ -1202,6 +1078,108 @@ module.exports = content.locals || {};
 
 /***/ }),
 
+/***/ "./src/statistic_video.js":
+/*!********************************!*\
+  !*** ./src/statistic_video.js ***!
+  \********************************/
+/*! no exports provided */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _scss_app_scss__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./scss/app.scss */ "./src/scss/app.scss");
+/* harmony import */ var _scss_app_scss__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_scss_app_scss__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! electron */ "electron");
+/* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(electron__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! uuid */ "uuid");
+/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(uuid__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! fs-jetpack */ "fs-jetpack");
+/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(fs_jetpack__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! path */ "path");
+/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(path__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! fluent-ffmpeg */ "fluent-ffmpeg");
+/* harmony import */ var fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_5__);
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! jquery */ "jquery");
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_6__);
+/* harmony import */ var datatables__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! datatables */ "datatables");
+/* harmony import */ var datatables__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(datatables__WEBPACK_IMPORTED_MODULE_7__);
+/* harmony import */ var bootstrap__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! bootstrap */ "bootstrap");
+/* harmony import */ var bootstrap__WEBPACK_IMPORTED_MODULE_8___default = /*#__PURE__*/__webpack_require__.n(bootstrap__WEBPACK_IMPORTED_MODULE_8__);
+/* harmony import */ var _helpers_initialize__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./helpers/initialize */ "./src/helpers/initialize.js");
+/* harmony import */ var _model_Repository__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./model/Repository */ "./src/model/Repository.js");
+/* harmony import */ var _model_entity_Video__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./model/entity/Video */ "./src/model/entity/Video.js");
+
+
+
+
+
+
+
+
+
+
+
+
+const app = electron__WEBPACK_IMPORTED_MODULE_1__["remote"].app;
+const ipc = electron__WEBPACK_IMPORTED_MODULE_1__["remote"].ipcMain;
+const appDir = fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.cwd(app.getAppPath());
+const manifest = appDir.read("package.json", "json");
+let d = datatables__WEBPACK_IMPORTED_MODULE_7___default()();
+let dialog = electron__WEBPACK_IMPORTED_MODULE_1__["remote"].dialog;
+var settings = new _helpers_initialize__WEBPACK_IMPORTED_MODULE_9__["default"]();
+var repository = new _model_Repository__WEBPACK_IMPORTED_MODULE_10__["default"]();
+var table, videoStatistic;
+console.log("statistic video");
+repository.fetchVideosGrouped().then(r => {
+  videoStatistic = r;
+  console.log(r);
+  table = jquery__WEBPACK_IMPORTED_MODULE_6___default()('#table').DataTable({
+    "data": videoStatistic,
+    "columns": [{
+      "data": "hash",
+      title: "#"
+    }, {
+      "data": "name",
+      title: "name"
+    }, {
+      "data": "videos",
+      title: "total"
+    }, {
+      "data": null,
+      title: "actions"
+    }],
+    "columnDefs": [{
+      targets: 0,
+      render: function (id) {
+        const src = path__WEBPACK_IMPORTED_MODULE_4___default.a.join(settings.video, id);
+        return `<img src="${src}.png" width="130" />`;
+      }
+    }, {
+      targets: 2,
+      render: videos => {
+        return videos.length;
+      }
+    }, {
+      "targets": -1,
+      "data": null,
+      "defaultContent": "" + "<button type='button' class='btn btn-sm btn-info mr-2' data-action='edit'>Visualize</button>"
+    }]
+  });
+}).catch(err => console.log(err));
+
+/***/ }),
+
+/***/ "bootstrap":
+/*!****************************!*\
+  !*** external "bootstrap" ***!
+  \****************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("bootstrap");
+
+/***/ }),
+
 /***/ "collections":
 /*!******************************!*\
   !*** external "collections" ***!
@@ -1254,6 +1232,17 @@ module.exports = require("electron");
 /***/ (function(module, exports) {
 
 module.exports = require("ffbinaries");
+
+/***/ }),
+
+/***/ "fluent-ffmpeg":
+/*!********************************!*\
+  !*** external "fluent-ffmpeg" ***!
+  \********************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("fluent-ffmpeg");
 
 /***/ }),
 
@@ -1313,4 +1302,4 @@ module.exports = require("uuid");
 /***/ })
 
 /******/ });
-//# sourceMappingURL=category.js.map
+//# sourceMappingURL=statistic_video.js.map

@@ -6,22 +6,27 @@ const ipc = remote.ipcMain
 
 var svg = d3.select('svg');
 const scale = svg.append('g').attr('class', 'scale');
-var scaleBar = []
+var scaleBar = [];
 var settings;
 var video;
 var points;
 var catById;
-var icons = {}
-var scaleLength = 0
-var scaleDuration = 0
+var icons = {};
+var scaleLength = 0;
+var scaleDuration = 0;
+var transition;
+var yIndex = 0;
 
 var init = () => {
   settings = {
     width: parseInt(svg.style('width').replace('px', ''), 10),
     height: parseInt(svg.style('height').replace('px', ''), 10),
+    iconSize: 20,
+    iconMargin: 15
   }
 
   settings.middle = settings.width / 2
+  settings.nbrPerHeight = Math.round(settings.height / (settings.iconSize + 5))
 }
 
 init()
@@ -38,10 +43,32 @@ const format = (value) => {
 
     return `${m}'${s}`
 }
-
 const getY = (index) => {
-    console.log(index, index % 5 * 30)
-    return index % 5 * 25 + 15;
+    return index % settings.nbrPerHeight * settings.iconSize + settings.iconMargin;
+}
+
+const display = () => {
+
+  scale.selectAll(".icon")
+    .data(points)
+    .enter()
+    .append("image")
+    .attr("xlink:href", p => catById[p.categoryId].path)
+    .attr("width", settings.iconSize)
+    .attr("height", settings.iconSize)
+    .attr('x', d => d.currentTime * 10 + settings.middle)
+    .attr("y", (d, i) => getY(i))
+
+  d3.selectAll("image").on("mouseover", function(p) {
+    d3.select(this).attr('xlink:href', catById[p.categoryId].pathDanger)
+    ipcRenderer.send('timeline:icon:mouseover', p)
+  });
+
+  d3.selectAll("image").on("mouseout", function(p) {
+    d3.select(this).attr('xlink:href', catById[p.categoryId].path)
+    ipcRenderer.send('timeline:icon:mouseout', p)
+  });
+
 }
 
 ipc.on('editor:video:metadata:response', ((event, args) => {
@@ -88,32 +115,27 @@ ipc.on('editor:video:metadata:response', ((event, args) => {
     .attr("y", d => settings.height - 5)
     .text( (d) => format(d.value))
 
-  console.log(points)
-
-  scale.selectAll("circle")
-    .data(points)
-    .enter()
-    .append("svg:image")
-    .attr("xlink:href", p => catById[p.categoryId].filePath)
-    .attr('class', 'icon')
-    .attr("width", 20)
-    .attr("height", 20)
-    .attr('x', d => d.currentTime * 10 + settings.middle)
-    .attr("y", (d, i) => getY(i))
+  display()
 
 }))
-
 ipc.on('editor:playing', (event, args) => {
   const x = video.duration * - 100 / 10
 
-  d3.select('.scale').transition()
+  transition = d3.select('.scale').transition()
     .ease(d3.easeLinear).attr('transform', `translate(${x}, 00)`)
     .duration(video.duration * 1000)
+  console.log(transition)
 })
-
-ipc.on("editor:stopped", _ => {
-  console.log("stopped")
+ipc.on("editor:stop", _ => {
+  scale.interrupt()
 })
+ipc.on("editor:oncanplay", ((event, args) => {
+  console.log(args)
+}))
+ipc.on("editor:point:add", ((event, args) => {
+  points.push(args)
+  display()
+}))
 
 ipcRenderer.send('editor:video:metadata:request')
 

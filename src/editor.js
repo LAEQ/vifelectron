@@ -39,19 +39,16 @@ d3.select("g")
   .selectAll(".icon")
   .data([])
   .enter()
-  .append("svg:image")
-  .attr("xlink:href", p => categoriesById[p.categoryId].filePath)
+  .append("image")
+  .attr("xlink:href", p => categoriesById[p.categoryId].path)
   .attr('class', 'icon')
   .attr("width", 80)
   .attr("height", 80)
   .attr("x", 10)
   .attr("y", 10);
 
-
-
-
 player.oncanplay = _ => {
-
+  ipcRenderer.send('editor:oncanplay', player.currentTime)
 }
 
 const durationSort = (a, b) => {
@@ -61,9 +58,12 @@ const pointPromise = repository.fetchPoints(videoId)
 const categoryPromise = repository.fetchCategory()
 
 Promise.all([pointPromise, categoryPromise]).then(values => {
-  const r = values[0]
-  points = r.sort(durationSort)
+  points = values[0]
   player.src = video.path
+
+  // console.log(points.map(p => p.currentTime))
+  // const test = points.filter( p => p.currentTime < 10 && p.currentTime > 0)
+  // console.log(test.toArray())
 
   let image = "";
   categories = values[1];
@@ -71,10 +71,9 @@ Promise.all([pointPromise, categoryPromise]).then(values => {
     categoriesByKey[c.shortcut] = c
     categoriesById[c.id] = c
     c.total = points.filter(p => p.categoryId == c.id).length
-    c.filePath = path.join(settings.icon, c.path)
     image += `<div class="list-group-item">
                 <div class="d-flex w-100 justify-content-between">
-                  <img class="d-flex mb-1" width="70" src="${c.filePath}" id="${c.name}" ></img>
+                  <img class="d-flex mb-1" width="70" src="${c.path}" id="${c.name}" ></img>
                   <div class="h1 d-flex align-self-center" id="${c.id}-counter">${c.total}</div>
                 </div>
                 <small>${c.name} - <span class="border border-secondary p-1">${c.shortcut}</span></small>
@@ -83,9 +82,7 @@ Promise.all([pointPromise, categoryPromise]).then(values => {
   })
   catContainer.innerHTML = image
 
-  ipcRenderer.send('editor:video:metadata:response',
-    {video: video, points: points, catById: categoriesById})
-
+  ipcRenderer.send('editor:video:metadata:response',{video: video, points: points, catById: categoriesById})
 })
 
 //Refresh and display icons
@@ -95,10 +92,10 @@ const refresh = _ => {
 
   let p = d3.select("g")
     .selectAll(".icon")
-    .data(pointsToShow)
+    .data(pointsToShow.toArray())
 
-  p.enter().append("svg:image")
-    .attr("xlink:href", p => categoriesById[p.categoryId].filePath)
+  p.enter().append("image")
+    .attr("xlink:href", p => categoriesById[p.categoryId].path)
     .attr('class', 'icon')
     .attr("width", 80)
     .attr("height", 80)
@@ -127,6 +124,7 @@ document.getElementById("play").addEventListener("click", _ =>{
 })
 document.getElementById("stop").addEventListener("click", _ =>{
   player.pause()
+  ipcRenderer.send("editor:stop")
 })
 document.getElementById("controls").addEventListener("click", _ => {
   ipcRenderer.send("controls:show-hide")
@@ -150,6 +148,7 @@ document.addEventListener('keydown', (ev => {
     refreshCount()
 
     addPoint(values)
+    video.total++
   }
 }))
 
@@ -169,15 +168,12 @@ player.addEventListener('loadedmetadata', function() {
   var bufferedSeconds = player.buffered.end(0) - player.buffered.start(0);
   console.log(bufferedSeconds + ' seconds of video are ready to play!');
 });
-
 const seek = (value) => {
   if(value > 0 && value < 100){
     const currentTime = Math.floor(value * player.duration / 100)
-    console.log(currentTime)
     player.currentTime = currentTime
   }
 }
-
 var mousePosition;
 overlay.addEventListener('mouseout', _ =>{
   mousePosition = undefined
@@ -196,16 +192,23 @@ const addPoint = (values) => {
   points.push(point)
 
   repository.savePoints(points, videoId)
+  ipcRenderer.send("editor:point:add", point)
 }
 
+
+//IPC
 ipc.on("point:add", (event, args) => {
   repository.savePoints(points, videoId)
 })
 ipc.on('controls:rate', (event, args) => {
   player.playbackRate = args
 })
-
 ipc.on('editor:video:metadata:request', _ => {
-  console.log("editor:video:metadata:request")
-  ipcRenderer.send('editor:video:metadata:response', {video: video, points: points, catById: categoriesById})
+  ipcRenderer.send('editor:video:metadata:response', {video: video, points: points.toArray(), catById: categoriesById})
 })
+ipc.on('timeline:icon:mouseover', ((event, args) => {
+  d3.select("g").selectAll(".icon").filter( p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathDanger)
+}))
+ipc.on('timeline:icon:mouseout', ((event, args) => {
+  d3.select("g").selectAll(".icon").filter( p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].path)
+}))

@@ -42,7 +42,10 @@ if (env.name !== "production") {
 const ipcMain = require('electron').ipcMain
 
 
-// Caegory section
+// Category section
+ipcMain.on('category:create', (event, category) => {
+  console.log(category)
+})
 ipcMain.on('category:open', _ => {
   let categoryWindow = createWindow("category", {
     width: 1000,
@@ -149,10 +152,33 @@ ipcMain.on('video:tool', (event, args) => {
 })
 
 
-//Category
-ipcMain.on('category:create', (event, category) => {
-  console.log(category)
+//Statistic
+ipcMain.on('statistic:video', _ => {
+  const statisticVideoWindow = createWindow("statisticVideo", {
+    width: 1000,
+    height: 600,
+    webPreferences: {
+      nodeIntegration: true
+    }
+  })
+  windows['statisticVideo'] = statisticVideoWindow;
+  statisticVideoWindow.setMenu(null)
+
+  statisticVideoWindow.loadURL(
+    url.format({
+      pathname: path.join(__dirname, "statistic_video.html"),
+      protocol: "file:",
+      slashes: true
+    })
+  ).then( _ => {
+
+  }).catch(err => console.log(err))
+
+  // if (env.name === "development") {
+  statisticVideoWindow.openDevTools();
+  // }
 })
+
 
 // Controls video editor
 ipcMain.on('controls:show-hide', _ => {

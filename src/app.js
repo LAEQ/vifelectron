@@ -17,6 +17,10 @@ const ipc = remote.ipcMain
 const appDir = jetpack.cwd(app.getAppPath());
 const manifest = appDir.read("package.json", "json");
 
+//
+// var test = require('collections/sorted-map')()
+// test.set(1, 'est')
+// console.log(test.values().next())
 
 let d = dt()
 let dialog = remote.dialog
@@ -32,7 +36,7 @@ repository.fetchVideos().then(result => {
   table = $('#table').DataTable({
     "data": videos,
     "columns": [
-      { "data": "id", title: "#" },
+      { "data": "hash", title: "#" },
       { "data": "name", title: "name"},
       { "data": "duration", title: "duration"},
       { "data": "collection.name", title: "collection"},
@@ -53,8 +57,6 @@ repository.fetchVideos().then(result => {
   $('#table tbody').on( 'click', 'button', function (evt) {
     var data = table.row( $(this).parents('tr') ).data();
 
-    console.log(data)
-
     let evtName;
 
     switch ($(this).data('action')) {
@@ -72,11 +74,11 @@ repository.fetchVideos().then(result => {
 })
 
 const showLastVideo = (videos) => {
-  let html = `<div class="col-12">No video</div>`
+
   if(videos && videos.length > 0){
     const video = videos[videos.length - 1]
-    const filePath = path.join(settings.video, `${video.id}.png`)
-    html = `<div class="col-md-4">
+    const filePath = path.join(settings.video, `${video.hash}.png`)
+    const html = `<div class="col-md-4">
                 <img src="${filePath}" alt="image" class="img-thumbnail" >
               </div>
               <div class="col-md-8">
@@ -94,12 +96,19 @@ const showLastVideo = (videos) => {
                       <dt class="col-sm-3">Latest count</dt>
                       <dd class="col-sm-9">${video.last}</dd>
                 </dl>
-                <div class=""><button class="btn btn-outline-success btn-lg">Start</button> </div>
+                <div class=""><button id="last-video-start-btn" class="btn btn-outline-success btn-lg" data-video="${video.id}">Start</button></div>
               </div>`
 
+    document.getElementById('latest-video-section').innerHTML = html;
+    document.getElementById("last-video-start-btn").addEventListener('click', ev => {
+      const id = $(ev.target).data('video');
+      ipcRenderer.send("editor:open", id);
+    });
+  } else {
+    document.getElementById('latest-video-section').innerHTML = `<div class="col-12">No video</div>`
   }
 
-  document.getElementById('latest-video-section').innerHTML = html
+
 }
 
 document.getElementById("add").addEventListener("click", _ => {
@@ -137,7 +146,7 @@ document.getElementById("add").addEventListener("click", _ => {
         ffmpeg(filePath)
           .screenshots({
             timestamps: [0],
-            filename: `${id}.png`,
+            filename: `${video.hash}.png`,
             folder: settings.video,
             size: '520x?'
           }).on('end', _ => {
@@ -157,7 +166,6 @@ document.getElementById("add").addEventListener("click", _ => {
 
 ipc.on("video:update", (event, args) => {
   if(table){
-    console.log(args)
     table.rows().data().clear()
     table.draw()
   }

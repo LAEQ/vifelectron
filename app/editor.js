@@ -711,9 +711,11 @@ let categoriesById = {};
 let img = [];
 let points = [];
 document.getElementById("title").innerHTML = video.name;
-d3__WEBPACK_IMPORTED_MODULE_8__["select"]("g").selectAll(".icon").data([]).enter().append("svg:image").attr("xlink:href", p => categoriesById[p.categoryId].filePath).attr('class', 'icon').attr("width", 80).attr("height", 80).attr("x", 10).attr("y", 10);
+d3__WEBPACK_IMPORTED_MODULE_8__["select"]("g").selectAll(".icon").data([]).enter().append("image").attr("xlink:href", p => categoriesById[p.categoryId].path).attr('class', 'icon').attr("width", 80).attr("height", 80).attr("x", 10).attr("y", 10);
 
-player.oncanplay = _ => {};
+player.oncanplay = _ => {
+  electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send('editor:oncanplay', player.currentTime);
+};
 
 const durationSort = (a, b) => {
   return a.currentTime - b.currentTime;
@@ -722,19 +724,20 @@ const durationSort = (a, b) => {
 const pointPromise = repository.fetchPoints(videoId);
 const categoryPromise = repository.fetchCategory();
 Promise.all([pointPromise, categoryPromise]).then(values => {
-  const r = values[0];
-  points = r.sort(durationSort);
-  player.src = video.path;
+  points = values[0];
+  player.src = video.path; // console.log(points.map(p => p.currentTime))
+  // const test = points.filter( p => p.currentTime < 10 && p.currentTime > 0)
+  // console.log(test.toArray())
+
   let image = "";
   categories = values[1];
   categories.forEach(c => {
     categoriesByKey[c.shortcut] = c;
     categoriesById[c.id] = c;
     c.total = points.filter(p => p.categoryId == c.id).length;
-    c.filePath = path__WEBPACK_IMPORTED_MODULE_3___default.a.join(settings.icon, c.path);
     image += `<div class="list-group-item">
                 <div class="d-flex w-100 justify-content-between">
-                  <img class="d-flex mb-1" width="70" src="${c.filePath}" id="${c.name}" ></img>
+                  <img class="d-flex mb-1" width="70" src="${c.path}" id="${c.name}" ></img>
                   <div class="h1 d-flex align-self-center" id="${c.id}-counter">${c.total}</div>
                 </div>
                 <small>${c.name} - <span class="border border-secondary p-1">${c.shortcut}</span></small>
@@ -751,8 +754,8 @@ Promise.all([pointPromise, categoryPromise]).then(values => {
 const refresh = _ => {
   const currentTime = player.currentTime;
   const pointsToShow = points.filter(p => p.currentTime > currentTime - 10 && p.currentTime < currentTime);
-  let p = d3__WEBPACK_IMPORTED_MODULE_8__["select"]("g").selectAll(".icon").data(pointsToShow);
-  p.enter().append("svg:image").attr("xlink:href", p => categoriesById[p.categoryId].filePath).attr('class', 'icon').attr("width", 80).attr("height", 80).attr("x", p => p.x).attr("y", p => p.y);
+  let p = d3__WEBPACK_IMPORTED_MODULE_8__["select"]("g").selectAll(".icon").data(pointsToShow.toArray());
+  p.enter().append("image").attr("xlink:href", p => categoriesById[p.categoryId].path).attr('class', 'icon').attr("width", 80).attr("height", 80).attr("x", p => p.x).attr("y", p => p.y);
   p.exit().remove();
 };
 
@@ -773,6 +776,7 @@ document.getElementById("play").addEventListener("click", _ => {
 });
 document.getElementById("stop").addEventListener("click", _ => {
   player.pause();
+  electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send("editor:stop");
 });
 document.getElementById("controls").addEventListener("click", _ => {
   electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send("controls:show-hide");
@@ -794,6 +798,7 @@ document.addEventListener('keydown', ev => {
     category.total++;
     refreshCount();
     addPoint(values);
+    video.total++;
   }
 }); //Slider
 
@@ -813,7 +818,6 @@ player.addEventListener('loadedmetadata', function () {
 const seek = value => {
   if (value > 0 && value < 100) {
     const currentTime = Math.floor(value * player.duration / 100);
-    console.log(currentTime);
     player.currentTime = currentTime;
   }
 };
@@ -836,7 +840,9 @@ const addPoint = values => {
   const point = new _model_entity_Point__WEBPACK_IMPORTED_MODULE_6__["Point"](values);
   points.push(point);
   repository.savePoints(points, videoId);
-};
+  electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send("editor:point:add", point);
+}; //IPC
+
 
 ipc.on("point:add", (event, args) => {
   repository.savePoints(points, videoId);
@@ -845,12 +851,17 @@ ipc.on('controls:rate', (event, args) => {
   player.playbackRate = args;
 });
 ipc.on('editor:video:metadata:request', _ => {
-  console.log("editor:video:metadata:request");
   electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send('editor:video:metadata:response', {
     video: video,
-    points: points,
+    points: points.toArray(),
     catById: categoriesById
   });
+});
+ipc.on('timeline:icon:mouseover', (event, args) => {
+  d3__WEBPACK_IMPORTED_MODULE_8__["select"]("g").selectAll(".icon").filter(p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathDanger);
+});
+ipc.on('timeline:icon:mouseout', (event, args) => {
+  d3__WEBPACK_IMPORTED_MODULE_8__["select"]("g").selectAll(".icon").filter(p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].path);
 });
 
 /***/ }),
@@ -980,6 +991,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _entity_Collection__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./entity/Collection */ "./src/model/entity/Collection.js");
 /* harmony import */ var _entity_Video__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./entity/Video */ "./src/model/entity/Video.js");
 /* harmony import */ var _entity_Point__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./entity/Point */ "./src/model/entity/Point.js");
+/* harmony import */ var _entity_VideoStatistic__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./entity/VideoStatistic */ "./src/model/entity/VideoStatistic.js");
+/* harmony import */ var collections__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! collections */ "collections");
+/* harmony import */ var collections__WEBPACK_IMPORTED_MODULE_9___default = /*#__PURE__*/__webpack_require__.n(collections__WEBPACK_IMPORTED_MODULE_9__);
+
+
 
 
 
@@ -1001,6 +1017,9 @@ class Repository {
     if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
       await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
         result = r.map(category => {
+          category.path = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, category.path);
+          category.pathPrimary = category.path.replace('.svg', '-primary.svg');
+          category.pathDanger = category.path.replace('.svg', '-danger.svg');
           return new _entity_Category__WEBPACK_IMPORTED_MODULE_4__["Category"](category);
         });
       });
@@ -1026,6 +1045,34 @@ class Repository {
     }
   }
 
+  async fetchVideosGrouped() {
+    const file = this.settings.getVideoPath();
+    let videos = [];
+    let result = [];
+
+    if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
+      await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
+        videos = r.map(video => {
+          return new _entity_Video__WEBPACK_IMPORTED_MODULE_6__["Video"](video);
+        });
+      });
+      videos.forEach(v => {
+        let collection = result.find(c => c.hash === v.hash);
+
+        if (collection === undefined) {
+          let collection = new _entity_VideoStatistic__WEBPACK_IMPORTED_MODULE_8__["VideoStatistic"]();
+          collection.add(v);
+          result.push(collection);
+        } else {
+          collection.add(v);
+        }
+      });
+      return result;
+    } else {
+      return [];
+    }
+  }
+
   fetchVideo(id) {
     return fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.read(this.settings.getVideoPath(), "json").filter(obj => obj.id === id).map(v => new _entity_Video__WEBPACK_IMPORTED_MODULE_6__["Video"](v))[0];
   }
@@ -1033,9 +1080,13 @@ class Repository {
   async fetchPoints(videoId) {
     let result = [];
     const points = fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.read(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.video, `${videoId}.json`), "json");
-    return points.map(obj => {
+    result = points.map(obj => {
       return new _entity_Point__WEBPACK_IMPORTED_MODULE_7__["Point"](obj);
     });
+    console.log(result); // var r = require("collections/sorted-set")
+    // result = r(result)
+
+    return result;
   }
 
   defaultCollection() {
@@ -1088,6 +1139,8 @@ class Category {
     this.id = obj.id;
     this.name = obj.name;
     this.path = obj.path;
+    this.pathPrimary = obj.pathPrimary;
+    this.pathDanger = obj.pathDanger;
     this.shortcut = obj.shortcut;
   }
 
@@ -1134,8 +1187,12 @@ class Collection {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Point", function() { return Point; });
+/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! uuid */ "uuid");
+/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(uuid__WEBPACK_IMPORTED_MODULE_0__);
+
 class Point {
   constructor(obj) {
+    this.id = Object(uuid__WEBPACK_IMPORTED_MODULE_0__["v4"])();
     this.videoId = obj.videoId;
     this.categoryId = obj.categoryId;
     this.x = obj.x;
@@ -1158,18 +1215,50 @@ class Point {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Video", function() { return Video; });
 /* harmony import */ var _Collection__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Collection */ "./src/model/entity/Collection.js");
-/* harmony import */ var moment__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! moment */ "moment");
-/* harmony import */ var moment__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(moment__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var crypto__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! crypto */ "crypto");
+/* harmony import */ var crypto__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(crypto__WEBPACK_IMPORTED_MODULE_1__);
 
 
 class Video {
   constructor(obj) {
+    let hasher = crypto__WEBPACK_IMPORTED_MODULE_1__["createHash"]('md5');
     this.id = obj.id;
     this.name = obj.name;
+    this.hash = hasher.update(obj.name).digest('hex');
     this.path = obj.path;
     this.duration = obj.duration;
     this.collection = new _Collection__WEBPACK_IMPORTED_MODULE_0__["Collection"](obj.collection);
     this.total = obj.total;
+  }
+
+}
+
+/***/ }),
+
+/***/ "./src/model/entity/VideoStatistic.js":
+/*!********************************************!*\
+  !*** ./src/model/entity/VideoStatistic.js ***!
+  \********************************************/
+/*! exports provided: VideoStatistic */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "VideoStatistic", function() { return VideoStatistic; });
+class VideoStatistic {
+  constructor() {
+    this.videos = [];
+    this.name = "";
+    this.hash = "";
+  }
+
+  add(video) {
+    if (this.videos.length === 0) {
+      this.hash = video.hash;
+      this.name = video.name;
+    }
+
+    this.videos.push(video);
   }
 
 }
@@ -1213,6 +1302,28 @@ module.exports = content.locals || {};
 /***/ (function(module, exports) {
 
 module.exports = require("bootstrap-slider");
+
+/***/ }),
+
+/***/ "collections":
+/*!******************************!*\
+  !*** external "collections" ***!
+  \******************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("collections");
+
+/***/ }),
+
+/***/ "crypto":
+/*!*************************!*\
+  !*** external "crypto" ***!
+  \*************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("crypto");
 
 /***/ }),
 

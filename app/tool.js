@@ -775,6 +775,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _entity_Collection__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./entity/Collection */ "./src/model/entity/Collection.js");
 /* harmony import */ var _entity_Video__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./entity/Video */ "./src/model/entity/Video.js");
 /* harmony import */ var _entity_Point__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./entity/Point */ "./src/model/entity/Point.js");
+/* harmony import */ var _entity_VideoStatistic__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./entity/VideoStatistic */ "./src/model/entity/VideoStatistic.js");
+/* harmony import */ var collections__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! collections */ "collections");
+/* harmony import */ var collections__WEBPACK_IMPORTED_MODULE_9___default = /*#__PURE__*/__webpack_require__.n(collections__WEBPACK_IMPORTED_MODULE_9__);
+
+
 
 
 
@@ -796,6 +801,9 @@ class Repository {
     if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
       await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
         result = r.map(category => {
+          category.path = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, category.path);
+          category.pathPrimary = category.path.replace('.svg', '-primary.svg');
+          category.pathDanger = category.path.replace('.svg', '-danger.svg');
           return new _entity_Category__WEBPACK_IMPORTED_MODULE_4__["Category"](category);
         });
       });
@@ -821,6 +829,34 @@ class Repository {
     }
   }
 
+  async fetchVideosGrouped() {
+    const file = this.settings.getVideoPath();
+    let videos = [];
+    let result = [];
+
+    if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
+      await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
+        videos = r.map(video => {
+          return new _entity_Video__WEBPACK_IMPORTED_MODULE_6__["Video"](video);
+        });
+      });
+      videos.forEach(v => {
+        let collection = result.find(c => c.hash === v.hash);
+
+        if (collection === undefined) {
+          let collection = new _entity_VideoStatistic__WEBPACK_IMPORTED_MODULE_8__["VideoStatistic"]();
+          collection.add(v);
+          result.push(collection);
+        } else {
+          collection.add(v);
+        }
+      });
+      return result;
+    } else {
+      return [];
+    }
+  }
+
   fetchVideo(id) {
     return fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.read(this.settings.getVideoPath(), "json").filter(obj => obj.id === id).map(v => new _entity_Video__WEBPACK_IMPORTED_MODULE_6__["Video"](v))[0];
   }
@@ -828,9 +864,13 @@ class Repository {
   async fetchPoints(videoId) {
     let result = [];
     const points = fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.read(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.video, `${videoId}.json`), "json");
-    return points.map(obj => {
+    result = points.map(obj => {
       return new _entity_Point__WEBPACK_IMPORTED_MODULE_7__["Point"](obj);
     });
+    console.log(result); // var r = require("collections/sorted-set")
+    // result = r(result)
+
+    return result;
   }
 
   defaultCollection() {
@@ -883,6 +923,8 @@ class Category {
     this.id = obj.id;
     this.name = obj.name;
     this.path = obj.path;
+    this.pathPrimary = obj.pathPrimary;
+    this.pathDanger = obj.pathDanger;
     this.shortcut = obj.shortcut;
   }
 
@@ -929,8 +971,12 @@ class Collection {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Point", function() { return Point; });
+/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! uuid */ "uuid");
+/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(uuid__WEBPACK_IMPORTED_MODULE_0__);
+
 class Point {
   constructor(obj) {
+    this.id = Object(uuid__WEBPACK_IMPORTED_MODULE_0__["v4"])();
     this.videoId = obj.videoId;
     this.categoryId = obj.categoryId;
     this.x = obj.x;
@@ -953,18 +999,50 @@ class Point {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Video", function() { return Video; });
 /* harmony import */ var _Collection__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Collection */ "./src/model/entity/Collection.js");
-/* harmony import */ var moment__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! moment */ "moment");
-/* harmony import */ var moment__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(moment__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var crypto__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! crypto */ "crypto");
+/* harmony import */ var crypto__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(crypto__WEBPACK_IMPORTED_MODULE_1__);
 
 
 class Video {
   constructor(obj) {
+    let hasher = crypto__WEBPACK_IMPORTED_MODULE_1__["createHash"]('md5');
     this.id = obj.id;
     this.name = obj.name;
+    this.hash = hasher.update(obj.name).digest('hex');
     this.path = obj.path;
     this.duration = obj.duration;
     this.collection = new _Collection__WEBPACK_IMPORTED_MODULE_0__["Collection"](obj.collection);
     this.total = obj.total;
+  }
+
+}
+
+/***/ }),
+
+/***/ "./src/model/entity/VideoStatistic.js":
+/*!********************************************!*\
+  !*** ./src/model/entity/VideoStatistic.js ***!
+  \********************************************/
+/*! exports provided: VideoStatistic */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "VideoStatistic", function() { return VideoStatistic; });
+class VideoStatistic {
+  constructor() {
+    this.videos = [];
+    this.name = "";
+    this.hash = "";
+  }
+
+  add(video) {
+    if (this.videos.length === 0) {
+      this.hash = video.hash;
+      this.name = video.name;
+    }
+
+    this.videos.push(video);
   }
 
 }
@@ -1114,6 +1192,28 @@ document.getElementById("convert").addEventListener('click', event => {
 
 /***/ }),
 
+/***/ "collections":
+/*!******************************!*\
+  !*** external "collections" ***!
+  \******************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("collections");
+
+/***/ }),
+
+/***/ "crypto":
+/*!*************************!*\
+  !*** external "crypto" ***!
+  \*************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("crypto");
+
+/***/ }),
+
 /***/ "electron":
 /*!***************************!*\
   !*** external "electron" ***!
@@ -1155,17 +1255,6 @@ module.exports = require("fluent-ffmpeg");
 /***/ (function(module, exports) {
 
 module.exports = require("fs-jetpack");
-
-/***/ }),
-
-/***/ "moment":
-/*!*************************!*\
-  !*** external "moment" ***!
-  \*************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-module.exports = require("moment");
 
 /***/ }),
 

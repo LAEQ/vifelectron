@@ -7,6 +7,9 @@ import {Collection} from "./entity/Collection";
 import {Video} from "./entity/Video";
 import {Point} from "./entity/Point"
 
+import {VideoStatistic} from "./entity/VideoStatistic";
+import * as SortedSet from 'collections'
+
 class Repository {
   constructor() {
     this.settings = new Settings();
@@ -19,6 +22,9 @@ class Repository {
     if(jetpack.exists(file)){
       await jetpack.readAsync(file, "json").then(r => {
         result = r.map(category => {
+          category.path = path.join(this.settings.icon, category.path)
+          category.pathPrimary = category.path.replace('.svg', '-primary.svg')
+          category.pathDanger = category.path.replace('.svg', '-danger.svg')
           return new Category(category)
         })
       })
@@ -46,6 +52,35 @@ class Repository {
     }
   }
 
+  async fetchVideosGrouped(){
+    const file = this.settings.getVideoPath()
+    let videos = []
+    let result = []
+
+    if(jetpack.exists(file)){
+      await jetpack.readAsync(file, "json").then(r => {
+        videos = r.map(video => {
+          return new Video(video)
+        })
+      })
+
+      videos.forEach(v => {
+        let collection = result.find(c => c.hash === v.hash)
+        if(collection === undefined){
+          let collection = new VideoStatistic();
+          collection.add(v)
+          result.push(collection)
+        } else {
+          collection.add(v)
+        }
+      })
+
+      return result
+    } else {
+      return []
+    }
+  }
+
   fetchVideo(id){
     return jetpack.read(this.settings.getVideoPath(), "json").filter(obj => obj.id === id).map(v => new Video(v))[0]
   }
@@ -53,9 +88,16 @@ class Repository {
   async fetchPoints(videoId){
     let result = []
     const points = jetpack.read(path.join(this.settings.video, `${videoId}.json`), "json")
-    return points.map(obj => {
+    result = points.map(obj => {
         return new Point(obj)
     })
+
+    console.log(result)
+
+    // var r = require("collections/sorted-set")
+    // result = r(result)
+
+    return result
   }
 
   defaultCollection(){
