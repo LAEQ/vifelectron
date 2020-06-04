@@ -881,6 +881,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(fs_jetpack__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var ffbinaries__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ffbinaries */ "ffbinaries");
 /* harmony import */ var ffbinaries__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(ffbinaries__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _model_Repository__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../model/Repository */ "./src/model/Repository.js");
+
 
 
 
@@ -888,7 +890,6 @@ __webpack_require__.r(__webpack_exports__);
 var os = __webpack_require__(/*! os */ "os");
 
 var platform = `${os.platform() - os.arch()}`;
-var dest = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(__dirname, "binaries");
 
 class Settings {
   constructor() {
@@ -897,6 +898,15 @@ class Settings {
     this.icon = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.homeDir, "icons");
     this.video = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.homeDir, "video");
     this.binaries = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.homeDir, "binaries");
+    this.log = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.homeDir, "log");
+  }
+
+  getErrorLog() {
+    return path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.log, "error.log");
+  }
+
+  getLog() {
+    return path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.log, "info.log");
   }
 
   getCategoryPath() {
@@ -936,7 +946,7 @@ class Settings {
               mode: '0777',
               content: content
             });
-          }); // jetpack.copyAsync(d, dest, {mode: '777'})
+          });
         }
       });
     }); //Add default icons
@@ -960,7 +970,11 @@ class Settings {
         quiet: true,
         destination: this.binaries
       }, function (err) {
-        console.log('success');
+        if (err) {
+          console.log("Failed to download ffbinaries");
+        } else {
+          console.log("FFbinaries donwloaded successfully");
+        }
       });
     }
   }
@@ -1017,9 +1031,12 @@ class Repository {
     if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
       await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
         result = r.map(category => {
-          category.path = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, category.path);
-          category.pathPrimary = category.path.replace('.svg', '-primary.svg');
-          category.pathDanger = category.path.replace('.svg', '-danger.svg');
+          if (category.hasOwnProperty('pathPrimary') === false) {
+            category.pathDefault = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, category.pathDefault);
+            category.pathPrimary = category.pathDefault.replace('default', 'primary');
+            category.pathDanger = category.pathDefault.replace('default', 'danger');
+          }
+
           return new _entity_Category__WEBPACK_IMPORTED_MODULE_4__["Category"](category);
         });
       });
@@ -1094,18 +1111,34 @@ class Repository {
     return collections.filter(c => c.default).map(c => new _entity_Collection__WEBPACK_IMPORTED_MODULE_5__["Collection"](c))[0];
   }
 
+  capitalize(s) {
+    if (typeof s !== 'string') return '';
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
   createCategory(data) {
     //Move file
-    const filename = path__WEBPACK_IMPORTED_MODULE_1___default.a.basename(data.get('file').path);
-    console.log(data.get('file'));
     const uuid = Object(uuid__WEBPACK_IMPORTED_MODULE_2__["v4"])();
-    fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.copy(data.get('file').path, path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, filename));
+    const files = ['default', 'primary', 'danger'];
     const values = {
       id: uuid,
       name: data.get('name'),
-      path: filename,
-      shortcut: 'Z'
+      pathDefault: "",
+      pathPrimary: "",
+      pathDanger: "",
+      shortcut: data.get('shortcut')
     };
+    files.forEach(f => {
+      const file = data.get(f);
+      const ext = path__WEBPACK_IMPORTED_MODULE_1___default.a.extname(data.get(f).name);
+      const src = data.get(f).path;
+      const dest = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, `${uuid}-${f}${ext}`);
+      values[`path${this.capitalize(f)}`] = dest;
+
+      if (ext !== "" && fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(src) === 'file') {
+        fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.copy(src, dest);
+      }
+    });
     const category = new _entity_Category__WEBPACK_IMPORTED_MODULE_4__["Category"](values);
     return category;
   }
@@ -1138,7 +1171,7 @@ class Category {
   constructor(obj) {
     this.id = obj.id;
     this.name = obj.name;
-    this.path = obj.path;
+    this.pathDefault = obj.pathDefault;
     this.pathPrimary = obj.pathPrimary;
     this.pathDanger = obj.pathDanger;
     this.shortcut = obj.shortcut;

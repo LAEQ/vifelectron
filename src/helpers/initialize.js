@@ -1,10 +1,11 @@
 import path from "path"
 import jetpack from "fs-jetpack";
 import * as ffbinaries from "ffbinaries";
+import Repository from "../model/Repository";
 
 var os = require('os')
 var platform = `${os.platform()-os.arch()}`
-var dest = path.join(__dirname, "binaries")
+
 
 class Settings {
   constructor() {
@@ -13,6 +14,15 @@ class Settings {
     this.icon = path.join(this.homeDir, "icons")
     this.video = path.join(this.homeDir, "video")
     this.binaries = path.join(this.homeDir, "binaries")
+    this.log = path.join(this.homeDir, "log")
+  }
+
+  getErrorLog(){
+    return path.join(this.log, "error.log")
+  }
+
+  getLog(){
+    return path.join(this.log, "info.log")
   }
 
   getCategoryPath(){
@@ -48,7 +58,6 @@ class Settings {
           jetpack.readAsync(file, "json").then(content => {
             jetpack.file(dest, {mode: '0777', content: content})
           })
-          // jetpack.copyAsync(d, dest, {mode: '777'})
         }
       })
     })
@@ -66,7 +75,11 @@ class Settings {
     if(jetpack.exists(this.getFfmpegPath()) === false){
       ffbinaries.downloadBinaries(['ffmpeg', 'ffprobe'], {
         platform: platform, quiet: true, destination: this.binaries}, function(err){
-        console.log('success')
+        if(err){
+          console.log("Failed to download ffbinaries")
+        } else {
+          console.log("FFbinaries donwloaded successfully")
+        }
       })
     }
   }

@@ -2,31 +2,31 @@
   {
     "id": 1,
     "name": "Stopped car",
-    "path": "moving-car.svg",
+    "pathDefault": "moving-car-default.svg",
     "shortcut": "A"
   },
   {
     "id": 2,
     "name": "Stopped car",
-    "path": "stopped-car.svg",
+    "pathDefault": "stopped-car-default.svg",
     "shortcut": "B"
   },
   {
     "id": 3,
     "name": "Moving truck",
-    "path": "moving-truck.svg",
+    "pathDefault": "moving-truck-default.svg",
     "shortcut": "C"
   },
   {
     "id": 4,
     "name": "Stopped truck",
-    "path": "stopped-truck.svg",
+    "pathDefault": "stopped-truck-default.svg",
     "shortcut": "D"
   },
   {
     "id": 5,
     "name": "Bicycle",
-    "path": "bicycle.svg",
+    "pathDefault": "bicycle-default.svg",
     "shortcut": "E"
   }
 ]

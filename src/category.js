@@ -1,8 +1,7 @@
-import "./scss/app.scss"
+import "./scss/category.scss"
 
-import { remote, ipcRenderer } from "electron";
+import { remote } from "electron";
 import jetpack from "fs-jetpack";
-import path from 'path';
 import $ from 'jquery'
 import dt from 'datatables'
 
@@ -14,52 +13,68 @@ const appDir = jetpack.cwd(app.getAppPath());
 const settings = new Settings();
 const manifest = appDir.read("package.json", "json");
 const d = dt()
+const BrowserWindow = remote.BrowserWindow
+const dialog = remote.dialog
 
-const getFile = _ =>{
-  const file = document.getElementById('file').files[0]
+const listenFile = (id) => {
+  const fileInput = document.getElementById(id)
 
-  return file
+  fileInput.addEventListener('change', ev => {
+    const file = fileInput.files[0]
+    if(file){
+      const previewImg = document.getElementById(`${id}Preview`)
+      previewImg.src = file.path
+    }
+  })
 }
 
-const getName = _ => {
-  return document.getElementById('name').value
-}
+let fileIds = ['default', 'primary', 'danger']
 
+fileIds.forEach(f => listenFile(f))
 
-let previewImage = document.getElementById("preview")
+const validate = () => {
+  let valid = true
+  var form = document.forms['create']
 
-document.getElementById('file').addEventListener('change', ev => {
-  const file = getFile()
-  if(file){
-    previewImage.src = file.path
-    previewImage.width = 100
+  //Name
+  let name = form[0].value
+
+  let c = categories.find(c => c.name === name)
+
+  if(c !== undefined){
+    $('#name').addClass('is-invalid')
+    $('#name-invalid-msg').removeClass('d-none')
+    valid = valid && false
   } else {
-    previewImage.src = null
-    previewImage.width = 0
+    $('#name').removeClass('is-invalid')
+    $('#name-invalid-msg').addClass('d-none')
+    valid = valid && true
   }
-})
+
+  let shortcut = form[1].value
+  c = categories.find(c => c.shortcut === shortcut)
+  if(shortcut.length != 1 || c !== undefined){
+    $('#shortcut').addClass('is-invalid')
+    $('#shortcut-invalid-msg').removeClass('d-none')
+    valid = valid && false
+  }
+
+  return valid
+}
 
 document.querySelector("form").addEventListener("submit", _ => {
   event.preventDefault()
-  const file = getFile()
-  const name = getName()
 
-  if(file){
-
-    alert("add validation file exist, category name exists, ...")
-
-    var form = document.getElementById('form-create');
+  if(validate()){
+    var form = document.forms['create']
     var data = new FormData(form);
 
     const category = repository.createCategory(data)
     categories.push(category)
 
     repository.save(categories, 'category.json')
-    var t = $('#table').DataTable();
-
-    t.row.add(category).draw(false)
+    $('#table').DataTable().row.add(category).draw(false)
   }
-
 })
 
 const repository = new Repository()
@@ -67,33 +82,55 @@ let categories, table
 
 repository.fetchCategory().then(result => {
   categories = result
+  console.log(result)
   table = $('#table').DataTable({
     "data": categories,
     "columns": [
-      { "data": "path", title: "icon"},
-      { "data": "id", title: "id" },
+      { "data": "pathDefault", title: "icon"},
       { "data": "name", title: "name"},
-      { "data": "path", title: "file"},
+      { "data": "shortcut", title: "shortcut" },
       { "data": null},
       { "data": null}
     ],
     "columnDefs": [
       {targets: 0, render: function(data) {
-        const src = path.join(settings.icon, data)
-        return `<img src="${src}" width="100" />`
+        return `<img src="${data}" width="60" />`
       }},
       {"targets": -2, "data": null, "defaultContent": "<button class='btn btn-sm btn-outline-danger delete'>Delete</button>"},
-      {"targets": -1, "data": null, "defaultContent": "<button class='btn btn-sm btn-outline-primary'>Edit</button>"}
+      {"targets": -1, "data": null, "defaultContent": "<button class='btn btn-sm btn-outline-primary edit'>Edit</button>"}
     ]
   });
   $('#table tbody').on( 'click', 'button', function () {
     var data = table.row( $(this).parents('tr') ).data();
 
-    categories = categories.filter(c => c.id != data.id)
-    jetpack.removeAsync(path.join(settings.icon, data.path))
-    repository.save(categories, "category.json")
-    table.row($(this).parents('tr')).remove().draw();
+    if($(this).hasClass('delete')){
+      let response = dialog.showMessageBoxSync(remote.getCurrentWindow(), {
+        buttons: ["NO", "YES"],
+        message: `Are you sure you want to delete the category: ${data.name}`
+      })
 
+      if(response === 1){
+        categories = categories.filter(c => c.id != data.id)
+        repository.save(categories, "category.json")
+        table.row($(this).parents('tr')).remove().draw();
+
+        jetpack.removeAsync(data.pathDefault)
+        jetpack.removeAsync(data.pathPrimary)
+        jetpack.removeAsync(data.pathDanger)
+      }
+   } else {
+      setFormData(data)
+    }
   });
 })
 
+const setFormData = (data) => {
+  var form = document.forms['create']
+  form[0]. value = data.name
+  form[1].value = data.shortcut
+  document.getElementById(`defaultPreview`).src = data.pathDefault
+  document.getElementById(`primaryPreview`).src = data.pathPrimary
+  document.getElementById(`dangerPreview`).src = data.pathDanger
+
+
+}

@@ -22,9 +22,12 @@ class Repository {
     if(jetpack.exists(file)){
       await jetpack.readAsync(file, "json").then(r => {
         result = r.map(category => {
-          category.path = path.join(this.settings.icon, category.path)
-          category.pathPrimary = category.path.replace('.svg', '-primary.svg')
-          category.pathDanger = category.path.replace('.svg', '-danger.svg')
+          if(category.hasOwnProperty('pathPrimary') === false){
+            category.pathDefault = path.join(this.settings.icon, category.pathDefault)
+            category.pathPrimary = category.pathDefault.replace('default', 'primary')
+            category.pathDanger = category.pathDefault.replace('default', 'danger')
+          }
+
           return new Category(category)
         })
       })
@@ -106,19 +109,37 @@ class Repository {
     return collections.filter(c => c.default).map(c => new Collection(c))[0]
   }
 
+ capitalize(s){
+    if (typeof s !== 'string') return ''
+    return s.charAt(0).toUpperCase() + s.slice(1)
+  }
+
   createCategory(data) {
     //Move file
-    const filename = path.basename(data.get('file').path)
-    console.log(data.get('file'))
     const uuid = uuidv4()
-    jetpack.copy(data.get('file').path, path.join(this.settings.icon, filename))
+    const files = ['default', 'primary', 'danger']
 
     const values = {
       id: uuid,
       name: data.get('name'),
-      path: filename,
-      shortcut: 'Z'
+      pathDefault: "",
+      pathPrimary: "",
+      pathDanger: "",
+      shortcut: data.get('shortcut'),
     }
+
+    files.forEach(f => {
+      const file = data.get(f);
+      const ext = path.extname(data.get(f).name);
+      const src = data.get(f).path
+      const dest = path.join(this.settings.icon, `${uuid}-${f}${ext}`);
+
+      values[`path${this.capitalize(f)}`] = dest
+
+      if(ext !== "" && jetpack.exists(src) === 'file'){
+        jetpack.copy(src, dest);
+      }
+    })
 
     const category = new Category(values)
 

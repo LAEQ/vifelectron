@@ -5,7 +5,7 @@
 
 import path from "path";
 import url from "url";
-import { app, Menu, remote } from "electron";
+import { app, Menu } from "electron";
 import { devMenuTemplate } from "./menu/dev_menu_template";
 import { editMenuTemplate } from "./menu/edit_menu_template"
 import { videoMenuTemplate} from "./menu/video_menu_template";
@@ -15,6 +15,7 @@ import createWindow from "./helpers/window";
 // Special module holding environment variables which you declared
 // in config/env_xxx.json file.
 import env from "env";
+import Logger from "./helpers/logger";
 import Settings from "./helpers/initialize";
 
 if(env.name === "development"){
@@ -25,6 +26,7 @@ if(env.name === "development"){
 
 let windows = {}
 let setting = new Settings();
+let logger = new Logger(setting)
 
 const setApplicationMenu = () => {
   const menus = [videoMenuTemplate, editMenuTemplate];
@@ -56,7 +58,7 @@ ipcMain.on('category:open', _ => {
   })
 
   categoryWindow.setMenu(null);
-  // categoryWindow.webContents.openDevTools()
+  categoryWindow.webContents.openDevTools()
   categoryWindow.loadURL(
     url.format({
       pathname: path.join(__dirname, "category.html"),
@@ -179,7 +181,6 @@ ipcMain.on('statistic:video', _ => {
   // }
 })
 
-
 // Controls video editor
 ipcMain.on('controls:show-hide', _ => {
   let controlWindow = createWindow("controls", {
@@ -202,12 +203,26 @@ ipcMain.on('controls:show-hide', _ => {
   ).catch(err => { console.log(err)})
 })
 
+
+//Logging
+ipcMain.on("log:info", ((event, args) => {
+  logger.info(args)
+}))
+
+ipcMain.on("log:warning", ((event, args) => {
+  logger.warning(args)
+}))
+
+ipcMain.on("log:error", ((event, args) => {
+  logger.error(args)
+}))
+
 // Ready state
 app.on("ready", () => {
   setApplicationMenu();
 
   const settings = new Settings()
-  settings.init()
+  settings.init(ipcMain)
 
   const mainWindow = createWindow("main", {
     width: 1000,
