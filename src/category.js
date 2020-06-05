@@ -94,7 +94,6 @@ let categories, table
 
 repository.fetchCategory().then(result => {
   categories = result
-  console.log(result)
   table = $('#table').DataTable({
     "data": categories,
     "columns": [

@@ -940,6 +940,33 @@ class Repository {
     fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.write(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.video, `${videoId}.json`), points);
   }
 
+  async fetchCollection() {
+    const file = this.settings.getCollectionPath();
+    let result = [];
+
+    if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
+      await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
+        result = r.map(c => {
+          return new _entity_Collection__WEBPACK_IMPORTED_MODULE_5__["Collection"](c);
+        });
+      });
+      return result;
+    } else {
+      return result;
+    }
+  }
+
+  createCollection(form) {
+    const collection = new _entity_Collection__WEBPACK_IMPORTED_MODULE_5__["Collection"]({
+      id: Object(uuid__WEBPACK_IMPORTED_MODULE_2__["v4"])(),
+      name: form[0].value,
+      default: form[1].value,
+      categoryIds: form[2].value.split(";").sort()
+    });
+    console.log(collection);
+    return collection;
+  }
+
 }
 
 /* harmony default export */ __webpack_exports__["default"] = (Repository);
@@ -991,7 +1018,7 @@ class Collection {
   constructor(obj) {
     this.id = obj.id;
     this.name = obj.name;
-    this.categories = obj.categories;
+    this.categoryIds = obj.categoryIds;
     this.default = obj.default;
   }
 

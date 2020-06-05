@@ -2,7 +2,7 @@ export class Collection{
   constructor(obj) {
     this.id = obj.id
     this.name = obj.name
-    this.categories = obj.categories
+    this.categoryIds = obj.categoryIds
     this.default = obj.default
   }
 }

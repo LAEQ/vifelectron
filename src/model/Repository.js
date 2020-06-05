@@ -158,6 +158,36 @@ class Repository {
   savePoints(points, videoId) {
     jetpack.write(path.join(this.settings.video, `${videoId}.json`), points)
   }
+
+  async fetchCollection(){
+    const file = this.settings.getCollectionPath()
+    let result = []
+
+    if(jetpack.exists(file)){
+      await jetpack.readAsync(file, "json").then(r => {
+        result = r.map(c => {
+          return new Collection(c)
+        })
+      })
+
+      return result
+    } else {
+      return result
+    }
+  }
+
+  createCollection(form) {
+    const collection = new Collection({
+      id: uuidv4(),
+      name: form[0].value,
+      default: form[1].value,
+      categoryIds: form[2].value.split(";").sort()
+    })
+
+    console.log(collection)
+
+    return collection;
+  }
 }
 
 export default Repository;

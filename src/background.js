@@ -68,6 +68,37 @@ ipcMain.on('category:open', _ => {
   ).then( _ => {}).catch(err => console.log(err))
 })
 
+
+//Collection
+ipcMain.on('collection:open', _ => {
+  if(windows['collection']){
+    return
+  }
+
+  let collectionWindow = createWindow("category", {
+    width: 1000,
+    height: 600,
+    webPreferences: {
+      nodeIntegration: true
+    }
+  })
+
+  collectionWindow.setMenu(null);
+  collectionWindow.webContents.openDevTools()
+  collectionWindow.loadURL(
+    url.format({
+      pathname: path.join(__dirname, "collection.html"),
+      protocol: "file",
+      slashes: true
+    })
+  ).then( _ => {}).catch(err => console.log(err))
+
+  collectionWindow.webContents.openDevTools()
+
+  windows['collection'] = collectionWindow
+})
+
+
 //Video editor
 ipcMain.on('editor:open', (event, args) => {
   let editorWindow = createWindow("editor", {
