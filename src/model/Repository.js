@@ -114,32 +114,37 @@ class Repository {
     return s.charAt(0).toUpperCase() + s.slice(1)
   }
 
-  createCategory(data) {
-    //Move file
+  createCategory(form) {
+
+
     const uuid = uuidv4()
-    const files = ['default', 'primary', 'danger']
+    const files = ['default', 'primary', 'alert']
 
     const values = {
       id: uuid,
-      name: data.get('name'),
+      name: form[0].value,
       pathDefault: "",
       pathPrimary: "",
       pathDanger: "",
-      shortcut: data.get('shortcut'),
+      shortcut: form[1].value,
     }
 
-    files.forEach(f => {
-      const file = data.get(f);
-      const ext = path.extname(data.get(f).name);
-      const src = data.get(f).path
-      const dest = path.join(this.settings.icon, `${uuid}-${f}${ext}`);
-
-      values[`path${this.capitalize(f)}`] = dest
+    const filing = (f, type) => {
+      const file = f.files[0]
+      const ext = path.extname(file.name);
+      const src = file.path
+      const dest = path.join(this.settings.icon, `${uuid}-${type}${ext}`)
 
       if(ext !== "" && jetpack.exists(src) === 'file'){
         jetpack.copy(src, dest);
       }
-    })
+
+      values[`path${this.capitalize(type)}`] = dest
+    }
+
+    filing(form[2], 'default')
+    filing(form[3], 'primary')
+    filing(form[4], 'alert')
 
     const category = new Category(values)
 

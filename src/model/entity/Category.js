@@ -4,7 +4,7 @@ class Category{
     this.name = obj.name
     this.pathDefault = obj.pathDefault
     this.pathPrimary = obj.pathPrimary
-    this.pathDanger = obj.pathDanger
+    this.pathAlert = obj.pathAlert
     this.shortcut = obj.shortcut
   }
 }

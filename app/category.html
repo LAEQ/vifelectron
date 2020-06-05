@@ -29,26 +29,59 @@
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="default">Default icon</label>
-          <input type="file" class="form-control-file" name="default" id="default" accept="image/*" required>
-          <img id="defaultPreview" class="img-thumbnail mt-2" width="120"/>
-          <div id="invalid-default" class="invalid-feedback"></div>
+        <div class="form-row">
+          <div class="col-8 custom-file">
+            <input type="file" class="custom-file-input" name="default" id="default" accept="image/*" required>
+            <label id="default-label" class="custom-file-label" for="default">Default icon</label>
+          </div>
+          <div class="col-3 ml-3">
+            <svg id="default-svg">
+              <g>
+                <rect width="100" height="100" fill="lightgray" />
+                <text transform="translate(20,40)" fill="gray">Preview</text>
+              </g>
+            </svg>
+            <img id="default-preview" class="img-thumbnail d-none" width="120"/>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="default">Hover icon</label><br />
-          <input type="file" class="form-control-file" name="primary" id="primary" accept="image/*" required>
-          <img id="primaryPreview" class="img-thumbnail mt-2" width="120"/>
-          <div id="invalid-hover" class="invalid-feedback"></div>
+        <div class="form-row ">
+          <div class="col-8 custom-file">
+            <input type="file" class="custom-file-input" name="default" id="primary" accept="image/*" required>
+            <label id="primary-label" class="custom-file-label" for="primary">Primary icon</label>
+          </div>
+          <div class="col-3 ml-3">
+            <svg id="primary-svg">
+              <g>
+                <rect width="100" height="100" fill="lightgray" />
+                <text transform="translate(20,40)" fill="gray">Preview</text>
+              </g>
+            </svg>
+            <img id="primary-preview" class="img-thumbnail d-none" width="120"/>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="default">Danger icon</label><br />
-          <input type="file" class="form-control-file" name="danger" id="danger" accept="image/*" required>
-          <img id="dangerPreview" class="img-thumbnail mt-2" width="120"/>
-          <div id="invalid-danger" class="invalid-feedback"></div>
+        <div class="form-row ">
+          <div class="col-8 custom-file">
+            <input type="file" class="custom-file-input" name="default" id="alert" accept="image/*" required>
+            <label id="alert-label" class="custom-file-label" for="alert">Alert icon</label>
+          </div>
+          <div class="col-3 ml-3">
+            <svg id="alert-svg">
+              <g>
+                <rect width="100" height="100" fill="lightgray" />
+                <text transform="translate(20,40)" fill="gray">Preview</text>
+              </g>
+            </svg>
+            <img id="alert-preview" class="img-thumbnail d-none" height="100"/>
+          </div>
         </div>
-        <div class="form-group">
-          <button type="submit" class="btn btn-success">Add</button>
+        <div class="form-row">
+          <div class="col-2">
+            <button type="reset" class="btn btn-outline-info btn-block" id="reset">Reset</button>
+          </div>
+          <div class="col-4">
+            <button type="submit" class="btn btn-success btn-block">Add</button>
+          </div>
+
         </div>
       </form>
     </div>

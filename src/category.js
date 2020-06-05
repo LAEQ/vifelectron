@@ -17,20 +17,31 @@ const BrowserWindow = remote.BrowserWindow
 const dialog = remote.dialog
 
 const listenFile = (id) => {
-  const fileInput = document.getElementById(id)
 
-  fileInput.addEventListener('change', ev => {
-    const file = fileInput.files[0]
+  const input = fileComponents[id].input
+  input.addEventListener('change', _ => {
+    const file = fileComponents[id].input.files[0]
     if(file){
-      const previewImg = document.getElementById(`${id}Preview`)
-      previewImg.src = file.path
+      fileComponents[id].preview.src = file.path
+      fileComponents[id].label.innerHTML = file.name
+      $(fileComponents[id].preview).removeClass('d-none')
+      $(fileComponents[id].svg).addClass('d-none')
     }
   })
 }
 
-let fileIds = ['default', 'primary', 'danger']
+let fileIds = ['default', 'primary', 'alert']
+let fileComponents = {}
+fileIds.forEach(id => {
+  fileComponents[id] = {}
+  fileComponents[id].input = document.getElementById(id)
+  fileComponents[id].label = document.getElementById(`${id}-label`)
+  fileComponents[id].preview = document.getElementById(`${id}-preview`)
+  fileComponents[id].svg = document.getElementById(`${id}-svg`)
 
-fileIds.forEach(f => listenFile(f))
+  listenFile(id)
+})
+
 
 const validate = () => {
   let valid = true
@@ -67,13 +78,14 @@ document.querySelector("form").addEventListener("submit", _ => {
 
   if(validate()){
     var form = document.forms['create']
-    var data = new FormData(form);
 
-    const category = repository.createCategory(data)
+    const category = repository.createCategory(form)
     categories.push(category)
 
     repository.save(categories, 'category.json')
     $('#table').DataTable().row.add(category).draw(false)
+
+    document.getElementById('reset').click()
   }
 })
 
@@ -89,15 +101,13 @@ repository.fetchCategory().then(result => {
       { "data": "pathDefault", title: "icon"},
       { "data": "name", title: "name"},
       { "data": "shortcut", title: "shortcut" },
-      { "data": null},
-      { "data": null}
+      { "data": null, title: "Action"}
     ],
     "columnDefs": [
       {targets: 0, render: function(data) {
         return `<img src="${data}" width="60" />`
       }},
-      {"targets": -2, "data": null, "defaultContent": "<button class='btn btn-sm btn-outline-danger delete'>Delete</button>"},
-      {"targets": -1, "data": null, "defaultContent": "<button class='btn btn-sm btn-outline-primary edit'>Edit</button>"}
+      {"targets": -1, "data": null, "defaultContent": "<button class='btn btn-sm btn-outline-danger delete'>Delete</button>"},
     ]
   });
   $('#table tbody').on( 'click', 'button', function () {
@@ -113,24 +123,9 @@ repository.fetchCategory().then(result => {
         categories = categories.filter(c => c.id != data.id)
         repository.save(categories, "category.json")
         table.row($(this).parents('tr')).remove().draw();
-
-        jetpack.removeAsync(data.pathDefault)
-        jetpack.removeAsync(data.pathPrimary)
-        jetpack.removeAsync(data.pathDanger)
       }
-   } else {
-      setFormData(data)
-    }
+   }
   });
 })
 
-const setFormData = (data) => {
-  var form = document.forms['create']
-  form[0]. value = data.name
-  form[1].value = data.shortcut
-  document.getElementById(`defaultPreview`).src = data.pathDefault
-  document.getElementById(`primaryPreview`).src = data.pathPrimary
-  document.getElementById(`dangerPreview`).src = data.pathDanger
 
-
-}
