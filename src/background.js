@@ -45,9 +45,6 @@ const ipcMain = require('electron').ipcMain
 
 
 // Category section
-ipcMain.on('category:create', (event, category) => {
-  console.log(category)
-})
 ipcMain.on('category:open', _ => {
   let categoryWindow = createWindow("category", {
     width: 1000,
@@ -66,8 +63,17 @@ ipcMain.on('category:open', _ => {
       slashes: true
     })
   ).then( _ => {}).catch(err => console.log(err))
-})
 
+  categoryWindow.webContents.openDevTools()
+  windows['category'] = categoryWindow
+
+  categoryWindow.onbeforeunload = _ => {
+    windows['category'] = null
+  }
+})
+ipcMain.on('category:create', (event, category) => {
+  console.log(category)
+})
 
 //Collection
 ipcMain.on('collection:open', _ => {
@@ -94,8 +100,11 @@ ipcMain.on('collection:open', _ => {
   ).then( _ => {}).catch(err => console.log(err))
 
   collectionWindow.webContents.openDevTools()
-
   windows['collection'] = collectionWindow
+
+  collectionWindow.onbeforeunload = _ => {
+    windows['collection'] = null
+  }
 })
 
 
@@ -122,6 +131,11 @@ ipcMain.on('editor:open', (event, args) => {
     console.log(err)
   })
 
+  windows['editor'] = editorWindow
+
+  editorWindow.onbeforeunload = _ => {
+    windows['editor'] = null
+  }
 })
 ipcMain.on('editor:timeline', (event, args) => {
   if(windows["timeline"] === undefined){
@@ -150,14 +164,12 @@ ipcMain.on('editor:timeline', (event, args) => {
     timelineWindow.openDevTools();
     // }
 
-    timelineWindow.on('close', _ =>{
-      windows['timeline'] = undefined
-      timelineWindow = null
-    })
-
     windows['timeline'] = timelineWindow
   }
 
+  timelineWindow.onbeforeunload = _ => {
+    windows['timeline'] = null
+  }
 })
 
 //Video conversion

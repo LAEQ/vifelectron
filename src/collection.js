@@ -8,6 +8,7 @@ import dt from 'datatables'
 import Repository from "./model/Repository";
 import Settings from "./helpers/initialize";
 
+const dialog = remote.dialog
 const settings = new Settings();
 const repo =   new Repository();
 
@@ -33,18 +34,20 @@ const initTable = _ => {
       {"data": "name", title: "name"},
       {"data": "default", title: "default"},
       {"data": "categoryIds", title: "List of categories"},
+      {"data": "default", title: "Set default"},
       {"data": null, title: "action"}
     ],
     "columnDefs": [
-      {"targets": -2, render: (data) => {
+      {"targets": -3, render: (data) => {
           let html = `<div class="d-flex align-content-start flex-wrap">`
           data.forEach(c => {
-            const path = categories.find(cat => cat.id == c).pathDefault
+            const category = categories.find(cat => cat.id == c)
+            console.log(category)
             html += `<div class="card m-2" >
-              <img class="card-img-top cat-icon mx-auto" src="${path}" >
+              <img class="card-img-top cat-icon mx-auto" src="${category.pathDefault}" >
               <ul class="list-group list-group-flush">
                 <li class="list-group-item">
-                    ${c.name}
+                    ${category.name}
                 </li>
               </ul>
             </div>`
@@ -55,11 +58,48 @@ const initTable = _ => {
           return html
         }
       },
+      {"targets": -2, render: (data) => {
+        if(data === false){
+          return "<button class='btn btn-sm btn-outline-info default'>Set as default</button>"
+        } else {
+          return ""
+        }
+      }},
       {"targets": -1, "data": null, "defaultContent": "<button class='btn btn-sm btn-danger delete'>Delete</button>"},
     ]
   });
-}
 
+  $('#table tbody').on( 'click', 'button', function () {
+    var data = table.row( $(this).parents('tr') ).data();
+
+    if($(this).hasClass('default')){
+      const table = $('#table').DataTable();
+      collections.forEach(col => col.default = col.id === data.id ? true : false)
+
+      table.clear().rows.add(collections).draw();
+      return
+    }
+
+    if(data.default === true){
+      dialog.showErrorBox('Operation not permitted', 'You cannot delete the default collection')
+      return
+    }
+
+    if($(this).hasClass('delete')){
+      let response = dialog.showMessageBoxSync(remote.getCurrentWindow(), {
+        buttons: ["NO", "YES"],
+        message: `Are you sure you want to delete the category: ${data.name}`
+      })
+
+      if(response === 1){
+        const colFiltered = collections.filter(c => c.id != data.id)
+        collections = colFiltered
+        repo.save(collections, "collection.json")
+        table.row($(this).parents('tr')).remove().draw();
+      }
+    }
+  });
+}
 const initForm = _ => {
   let html = `<div class="d-flex align-content-start flex-wrap">`
 
@@ -75,8 +115,6 @@ const initForm = _ => {
   })
 
   html += `</div>`
-
-  // console.log(html)
 
   document.getElementById('form-category-list').innerHTML = html
 
@@ -104,7 +142,6 @@ document.querySelector("form").addEventListener("submit", ev => {
 
   const name = form[0].value
   const col = collections.find(c => c.name === name)
-  console.log(col)
 
   if(col !== undefined){
     $(`#name`).addClass('is-invalid')
@@ -124,16 +161,18 @@ document.querySelector("form").addEventListener("submit", ev => {
 
   if(valid){
     const newCol = repo.createCollection(form)
+
+    if(newCol.default === true){
+      collections.forEach(c => c.default = false)
+    }
+
     collections.push(newCol)
 
     $('#reset').click()
     $('.cat-click').removeClass('alert alert-primary')
 
     repo.save(collections, 'collection.json')
-    $('#table').DataTable().row.add(newCol).draw(false)
+    table.clear().rows.add(collections).draw();
   }
-
-
-
 });
 

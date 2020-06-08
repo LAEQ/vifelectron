@@ -180,11 +180,9 @@ class Repository {
     const collection = new Collection({
       id: uuidv4(),
       name: form[0].value,
-      default: form[1].value,
+      default: form[1].checked,
       categoryIds: form[2].value.split(";").sort()
     })
-
-    console.log(collection)
 
     return collection;
   }

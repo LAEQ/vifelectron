@@ -658,6 +658,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+const dialog = electron__WEBPACK_IMPORTED_MODULE_1__["remote"].dialog;
 const settings = new _helpers_initialize__WEBPACK_IMPORTED_MODULE_6__["default"]();
 const repo = new _model_Repository__WEBPACK_IMPORTED_MODULE_5__["default"]();
 const catPromise = repo.fetchCategory();
@@ -687,20 +688,24 @@ const initTable = _ => {
       "data": "categoryIds",
       title: "List of categories"
     }, {
+      "data": "default",
+      title: "Set default"
+    }, {
       "data": null,
       title: "action"
     }],
     "columnDefs": [{
-      "targets": -2,
+      "targets": -3,
       render: data => {
         let html = `<div class="d-flex align-content-start flex-wrap">`;
         data.forEach(c => {
-          const path = categories.find(cat => cat.id == c).pathDefault;
+          const category = categories.find(cat => cat.id == c);
+          console.log(category);
           html += `<div class="card m-2" >
-              <img class="card-img-top cat-icon mx-auto" src="${path}" >
+              <img class="card-img-top cat-icon mx-auto" src="${category.pathDefault}" >
               <ul class="list-group list-group-flush">
                 <li class="list-group-item">
-                    ${c.name}
+                    ${category.name}
                 </li>
               </ul>
             </div>`;
@@ -709,10 +714,48 @@ const initTable = _ => {
         return html;
       }
     }, {
+      "targets": -2,
+      render: data => {
+        if (data === false) {
+          return "<button class='btn btn-sm btn-outline-info default'>Set as default</button>";
+        } else {
+          return "";
+        }
+      }
+    }, {
       "targets": -1,
       "data": null,
       "defaultContent": "<button class='btn btn-sm btn-danger delete'>Delete</button>"
     }]
+  });
+  jquery__WEBPACK_IMPORTED_MODULE_3___default()('#table tbody').on('click', 'button', function () {
+    var data = table.row(jquery__WEBPACK_IMPORTED_MODULE_3___default()(this).parents('tr')).data();
+
+    if (jquery__WEBPACK_IMPORTED_MODULE_3___default()(this).hasClass('default')) {
+      const table = jquery__WEBPACK_IMPORTED_MODULE_3___default()('#table').DataTable();
+      collections.forEach(col => col.default = col.id === data.id ? true : false);
+      table.clear().rows.add(collections).draw();
+      return;
+    }
+
+    if (data.default === true) {
+      dialog.showErrorBox('Operation not permitted', 'You cannot delete the default collection');
+      return;
+    }
+
+    if (jquery__WEBPACK_IMPORTED_MODULE_3___default()(this).hasClass('delete')) {
+      let response = dialog.showMessageBoxSync(electron__WEBPACK_IMPORTED_MODULE_1__["remote"].getCurrentWindow(), {
+        buttons: ["NO", "YES"],
+        message: `Are you sure you want to delete the category: ${data.name}`
+      });
+
+      if (response === 1) {
+        const colFiltered = collections.filter(c => c.id != data.id);
+        collections = colFiltered;
+        repo.save(collections, "collection.json");
+        table.row(jquery__WEBPACK_IMPORTED_MODULE_3___default()(this).parents('tr')).remove().draw();
+      }
+    }
   });
 };
 
@@ -728,8 +771,7 @@ const initForm = _ => {
               </ul>
             </div>`;
   });
-  html += `</div>`; // console.log(html)
-
+  html += `</div>`;
   document.getElementById('form-category-list').innerHTML = html;
   jquery__WEBPACK_IMPORTED_MODULE_3___default()('.cat-click').on('click', ev => {
     const target = jquery__WEBPACK_IMPORTED_MODULE_3___default()(ev.currentTarget);
@@ -753,7 +795,6 @@ document.querySelector("form").addEventListener("submit", ev => {
   var form = document.forms['create'];
   const name = form[0].value;
   const col = collections.find(c => c.name === name);
-  console.log(col);
 
   if (col !== undefined) {
     jquery__WEBPACK_IMPORTED_MODULE_3___default()(`#name`).addClass('is-invalid');
@@ -773,11 +814,16 @@ document.querySelector("form").addEventListener("submit", ev => {
 
   if (valid) {
     const newCol = repo.createCollection(form);
+
+    if (newCol.default === true) {
+      collections.forEach(c => c.default = false);
+    }
+
     collections.push(newCol);
     jquery__WEBPACK_IMPORTED_MODULE_3___default()('#reset').click();
     jquery__WEBPACK_IMPORTED_MODULE_3___default()('.cat-click').removeClass('alert alert-primary');
     repo.save(collections, 'collection.json');
-    jquery__WEBPACK_IMPORTED_MODULE_3___default()('#table').DataTable().row.add(newCol).draw(false);
+    table.clear().rows.add(collections).draw();
   }
 });
 
@@ -1093,10 +1139,9 @@ class Repository {
     const collection = new _entity_Collection__WEBPACK_IMPORTED_MODULE_5__["Collection"]({
       id: Object(uuid__WEBPACK_IMPORTED_MODULE_2__["v4"])(),
       name: form[0].value,
-      default: form[1].value,
+      default: form[1].checked,
       categoryIds: form[2].value.split(";").sort()
     });
-    console.log(collection);
     return collection;
   }
 

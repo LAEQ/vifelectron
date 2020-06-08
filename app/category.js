@@ -729,6 +729,7 @@ document.querySelector("form").addEventListener("submit", _ => {
     categories.push(category);
     repository.save(categories, 'category.json');
     jquery__WEBPACK_IMPORTED_MODULE_3___default()('#table').DataTable().row.add(category).draw(false);
+    table.reload();
     document.getElementById('reset').click();
   }
 });
@@ -775,6 +776,7 @@ repository.fetchCategory().then(result => {
         categories = categories.filter(c => c.id != data.id);
         repository.save(categories, "category.json");
         table.row(jquery__WEBPACK_IMPORTED_MODULE_3___default()(this).parents('tr')).remove().draw();
+        table.reload();
       }
     }
   });
@@ -1092,10 +1094,9 @@ class Repository {
     const collection = new _entity_Collection__WEBPACK_IMPORTED_MODULE_5__["Collection"]({
       id: Object(uuid__WEBPACK_IMPORTED_MODULE_2__["v4"])(),
       name: form[0].value,
-      default: form[1].value,
+      default: form[1].checked,
       categoryIds: form[2].value.split(";").sort()
     });
-    console.log(collection);
     return collection;
   }
 

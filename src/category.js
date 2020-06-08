@@ -30,8 +30,8 @@ const listenFile = (id) => {
   })
 }
 
-let fileIds = ['default', 'primary', 'alert']
-let fileComponents = {}
+let fileIds = ['default', 'primary', 'alert'];
+let fileComponents = {};
 fileIds.forEach(id => {
   fileComponents[id] = {}
   fileComponents[id].input = document.getElementById(id)
@@ -40,8 +40,7 @@ fileIds.forEach(id => {
   fileComponents[id].svg = document.getElementById(`${id}-svg`)
 
   listenFile(id)
-})
-
+});
 
 const validate = () => {
   let valid = true
@@ -71,7 +70,7 @@ const validate = () => {
   }
 
   return valid
-}
+};
 
 document.querySelector("form").addEventListener("submit", _ => {
   event.preventDefault()
@@ -84,13 +83,14 @@ document.querySelector("form").addEventListener("submit", _ => {
 
     repository.save(categories, 'category.json')
     $('#table').DataTable().row.add(category).draw(false)
+    table.reload();
 
     document.getElementById('reset').click()
   }
-})
+});
 
-const repository = new Repository()
-let categories, table
+const repository = new Repository();
+let categories, table;
 
 repository.fetchCategory().then(result => {
   categories = result
@@ -122,6 +122,7 @@ repository.fetchCategory().then(result => {
         categories = categories.filter(c => c.id != data.id)
         repository.save(categories, "category.json")
         table.row($(this).parents('tr')).remove().draw();
+        table.reload();
       }
    }
   });
