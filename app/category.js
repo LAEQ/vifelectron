@@ -1100,6 +1100,49 @@ class Repository {
     return collection;
   }
 
+  async fetchCategoryByCollection(collection) {
+    const file = this.settings.getCategoryPath();
+    let result = [];
+    console.log(collection);
+
+    if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
+      await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
+        result = r.map(category => {
+          if (category.hasOwnProperty('pathPrimary') === false) {
+            category.pathDefault = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, category.pathDefault);
+            category.pathPrimary = category.pathDefault.replace('default', 'primary');
+            category.pathDanger = category.pathDefault.replace('default', 'danger');
+          }
+
+          return new _entity_Category__WEBPACK_IMPORTED_MODULE_4__["Category"](category);
+        });
+      });
+      return result.filter(c => collection.categoryIds.includes(c.id));
+    } else {
+      return result;
+    }
+  }
+
+  deleteFilesIfExist(id) {
+    fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.findAsync(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.video), {
+      matching: `${id}.*`
+    }).then(r => {
+      r.forEach(file => {
+        if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file) === 'file') {
+          fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.removeAsync(file);
+        }
+      });
+    });
+  }
+
+  deleteVideo(video) {
+    this.fetchVideos().then(videoList => {
+      const list = videoList.filter(v => v.id !== video.id);
+      this.save(list, 'video.json');
+      this.deleteFilesIfExist(video.id);
+    });
+  }
+
 }
 
 /* harmony default export */ __webpack_exports__["default"] = (Repository);

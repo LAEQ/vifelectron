@@ -109,14 +109,12 @@ class Repository {
     return collections.filter(c => c.default).map(c => new Collection(c))[0]
   }
 
- capitalize(s){
+  capitalize(s){
     if (typeof s !== 'string') return ''
     return s.charAt(0).toUpperCase() + s.slice(1)
   }
 
   createCategory(form) {
-
-
     const uuid = uuidv4()
     const files = ['default', 'primary', 'alert']
 
@@ -185,6 +183,49 @@ class Repository {
     })
 
     return collection;
+  }
+
+  async fetchCategoryByCollection(collection) {
+      const file = this.settings.getCategoryPath()
+      let result = []
+
+      console.log(collection)
+
+      if(jetpack.exists(file)){
+        await jetpack.readAsync(file, "json").then(r => {
+          result = r.map(category => {
+            if(category.hasOwnProperty('pathPrimary') === false){
+              category.pathDefault = path.join(this.settings.icon, category.pathDefault)
+              category.pathPrimary = category.pathDefault.replace('default', 'primary')
+              category.pathDanger = category.pathDefault.replace('default', 'danger')
+            }
+
+            return new Category(category)
+          })
+        })
+
+        return result.filter( c => collection.categoryIds.includes(c.id))
+      } else {
+        return result
+      }
+  }
+
+  deleteFilesIfExist(id){
+    jetpack.findAsync(path.join(this.settings.video), {matching: `${id}.*`}).then(r => {
+      r.forEach(file => {
+        if(jetpack.exists(file) === 'file'){
+          jetpack.removeAsync(file)
+        }
+      })
+    })
+  }
+
+  deleteVideo(video) {
+    this.fetchVideos().then(videoList => {
+      const list = videoList.filter(v => v.id !== video.id)
+      this.save(list, 'video.json')
+      this.deleteFilesIfExist(video.id)
+    })
   }
 }
 

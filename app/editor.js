@@ -722,7 +722,7 @@ const durationSort = (a, b) => {
 };
 
 const pointPromise = repository.fetchPoints(videoId);
-const categoryPromise = repository.fetchCategory();
+const categoryPromise = repository.fetchCategoryByCollection(video.collection);
 Promise.all([pointPromise, categoryPromise]).then(values => {
   points = values[0];
   player.src = video.path; // console.log(points.map(p => p.currentTime))
@@ -737,7 +737,7 @@ Promise.all([pointPromise, categoryPromise]).then(values => {
     c.total = points.filter(p => p.categoryId == c.id).length;
     image += `<div class="list-group-item">
                 <div class="d-flex w-100 justify-content-between">
-                  <img class="d-flex mb-1" width="70" src="${c.path}" id="${c.name}" ></img>
+                  <img class="d-flex mb-1" width="70" src="${c.pathDefault}" id="${c.name}" ></img>
                   <div class="h1 d-flex align-self-center" id="${c.id}-counter">${c.total}</div>
                 </div>
                 <small>${c.name} - <span class="border border-secondary p-1">${c.shortcut}</span></small>
@@ -1180,6 +1180,49 @@ class Repository {
       categoryIds: form[2].value.split(";").sort()
     });
     return collection;
+  }
+
+  async fetchCategoryByCollection(collection) {
+    const file = this.settings.getCategoryPath();
+    let result = [];
+    console.log(collection);
+
+    if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
+      await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
+        result = r.map(category => {
+          if (category.hasOwnProperty('pathPrimary') === false) {
+            category.pathDefault = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, category.pathDefault);
+            category.pathPrimary = category.pathDefault.replace('default', 'primary');
+            category.pathDanger = category.pathDefault.replace('default', 'danger');
+          }
+
+          return new _entity_Category__WEBPACK_IMPORTED_MODULE_4__["Category"](category);
+        });
+      });
+      return result.filter(c => collection.categoryIds.includes(c.id));
+    } else {
+      return result;
+    }
+  }
+
+  deleteFilesIfExist(id) {
+    fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.findAsync(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.video), {
+      matching: `${id}.*`
+    }).then(r => {
+      r.forEach(file => {
+        if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file) === 'file') {
+          fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.removeAsync(file);
+        }
+      });
+    });
+  }
+
+  deleteVideo(video) {
+    this.fetchVideos().then(videoList => {
+      const list = videoList.filter(v => v.id !== video.id);
+      this.save(list, 'video.json');
+      this.deleteFilesIfExist(video.id);
+    });
   }
 
 }

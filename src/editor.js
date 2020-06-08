@@ -55,7 +55,7 @@ const durationSort = (a, b) => {
   return a.currentTime - b.currentTime
 }
 const pointPromise = repository.fetchPoints(videoId)
-const categoryPromise = repository.fetchCategory()
+const categoryPromise = repository.fetchCategoryByCollection(video.collection)
 
 Promise.all([pointPromise, categoryPromise]).then(values => {
   points = values[0]
@@ -73,7 +73,7 @@ Promise.all([pointPromise, categoryPromise]).then(values => {
     c.total = points.filter(p => p.categoryId == c.id).length
     image += `<div class="list-group-item">
                 <div class="d-flex w-100 justify-content-between">
-                  <img class="d-flex mb-1" width="70" src="${c.path}" id="${c.name}" ></img>
+                  <img class="d-flex mb-1" width="70" src="${c.pathDefault}" id="${c.name}" ></img>
                   <div class="h1 d-flex align-self-center" id="${c.id}-counter">${c.total}</div>
                 </div>
                 <small>${c.name} - <span class="border border-secondary p-1">${c.shortcut}</span></small>

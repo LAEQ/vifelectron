@@ -12,12 +12,13 @@ import 'bootstrap';
 import Settings from "./helpers/initialize";
 import Repository from "./model/Repository";
 import {Video} from "./model/entity/Video";
+
+
 const app = remote.app;
 const ipc = remote.ipcMain
 const appDir = jetpack.cwd(app.getAppPath());
 const manifest = appDir.read("package.json", "json");
 
-//
 // var test = require('collections/sorted-map')()
 // test.set(1, 'est')
 // console.log(test.values().next())
@@ -41,6 +42,7 @@ repository.fetchVideos().then(result => {
       { "data": "duration", title: "duration"},
       { "data": "collection.name", title: "collection"},
       { "data": "total", title: "total"},
+      { "data": null},
       { "data": null}
     ],
     "columnDefs": [
@@ -48,6 +50,9 @@ repository.fetchVideos().then(result => {
           const src = path.join(settings.video, id)
           return `<img src="${src}.png" width="130" />`
         }},
+      {"targets": -2, "data": null, "defaultContent":
+            "<button type='button' class='btn btn-sm btn-outline-danger' data-action='delete'>Delete</button>"
+      },
       {"targets": -1, "data": null, "defaultContent": "" +
           "<button type='button' class='btn btn-sm btn-warning mr-2' data-action='info'>Info</button>" +
           "<button type='button' class='btn btn-sm btn-info mr-2' data-action='edit'>Edit</button>"}
@@ -63,6 +68,9 @@ repository.fetchVideos().then(result => {
 
       case "info":
         evtName = "video:tool"
+        break;
+      case "delete":
+        evtName = "video:delete"
         break;
       default:
         evtName = "editor:open"
@@ -107,8 +115,6 @@ const showLastVideo = (videos) => {
   } else {
     document.getElementById('latest-video-section').innerHTML = `<div class="col-12">No video</div>`
   }
-
-
 }
 
 document.getElementById("add").addEventListener("click", _ => {
@@ -170,3 +176,21 @@ ipc.on("video:update", (event, args) => {
     table.draw()
   }
 });
+
+ipc.on("video:delete", ((event, args) => {
+
+  const video = repository.fetchVideo(args)
+
+  let response = dialog.showMessageBoxSync(remote.getCurrentWindow(), {
+    buttons: ["NO", "YES"],
+    message: `Are you sure you want to delete this video: ${video.name}`
+  })
+
+  if(response === 1){
+    repository.deleteVideo(video)
+    videos = videos.filter(v => v.id !== video.id)
+
+    table.clear().rows.add(videos).draw();
+    showLastVideo(videos)
+  }
+}))

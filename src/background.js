@@ -165,10 +165,10 @@ ipcMain.on('editor:timeline', (event, args) => {
     // }
 
     windows['timeline'] = timelineWindow
-  }
 
-  timelineWindow.onbeforeunload = _ => {
-    windows['timeline'] = null
+    timelineWindow.onbeforeunload = _ => {
+      windows['timeline'] = null
+    }
   }
 })
 

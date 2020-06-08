@@ -42,7 +42,6 @@ const initTable = _ => {
           let html = `<div class="d-flex align-content-start flex-wrap">`
           data.forEach(c => {
             const category = categories.find(cat => cat.id == c)
-            console.log(category)
             html += `<div class="card m-2" >
               <img class="card-img-top cat-icon mx-auto" src="${category.pathDefault}" >
               <ul class="list-group list-group-flush">
