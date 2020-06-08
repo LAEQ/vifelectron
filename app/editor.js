@@ -743,7 +743,8 @@ Promise.all([pointPromise, categoryPromise]).then(values => {
                 <small>${c.name} - <span class="border border-secondary p-1">${c.shortcut}</span></small>
              </div>`;
   });
-  catContainer.innerHTML = image;
+  catContainer.innerHTML = image; // refresh()
+
   electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send('editor:video:metadata:response', {
     video: video,
     points: points,
@@ -752,10 +753,12 @@ Promise.all([pointPromise, categoryPromise]).then(values => {
 }); //Refresh and display icons
 
 const refresh = _ => {
+  console.log('refresh');
   const currentTime = player.currentTime;
-  const pointsToShow = points.filter(p => p.currentTime > currentTime - 10 && p.currentTime < currentTime);
+  const pointsToShow = points.filter(p => p.currentTime > currentTime - 10 && p.currentTime < currentTime); // const pointsToShow = points
+
   let p = d3__WEBPACK_IMPORTED_MODULE_8__["select"]("g").selectAll(".icon").data(pointsToShow.toArray());
-  p.enter().append("image").attr("xlink:href", p => categoriesById[p.categoryId].path).attr('class', 'icon').attr("width", 80).attr("height", 80).attr("x", p => p.x).attr("y", p => p.y);
+  p.enter().append("image").attr("xlink:href", p => categoriesById[p.categoryId].pathDefault).attr('class', 'icon').attr("width", 80).attr("height", 80).attr("x", p => p.x - 40).attr("y", p => p.y - 40);
   p.exit().remove();
 };
 
@@ -1193,7 +1196,7 @@ class Repository {
           if (category.hasOwnProperty('pathPrimary') === false) {
             category.pathDefault = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, category.pathDefault);
             category.pathPrimary = category.pathDefault.replace('default', 'primary');
-            category.pathDanger = category.pathDefault.replace('default', 'danger');
+            category.pathAlert = category.pathDefault.replace('default', 'danger');
           }
 
           return new _entity_Category__WEBPACK_IMPORTED_MODULE_4__["Category"](category);

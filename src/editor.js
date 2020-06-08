@@ -82,25 +82,29 @@ Promise.all([pointPromise, categoryPromise]).then(values => {
   })
   catContainer.innerHTML = image
 
+  // refresh()
+
   ipcRenderer.send('editor:video:metadata:response',{video: video, points: points, catById: categoriesById})
 })
 
 //Refresh and display icons
 const refresh = _ => {
+  console.log('refresh')
   const currentTime = player.currentTime
   const pointsToShow = points.filter(p => p.currentTime > currentTime - 10 && p.currentTime < currentTime)
+  // const pointsToShow = points
 
   let p = d3.select("g")
     .selectAll(".icon")
     .data(pointsToShow.toArray())
 
   p.enter().append("image")
-    .attr("xlink:href", p => categoriesById[p.categoryId].path)
+    .attr("xlink:href", p => categoriesById[p.categoryId].pathDefault)
     .attr('class', 'icon')
     .attr("width", 80)
     .attr("height", 80)
-    .attr("x", p => p.x)
-    .attr("y", p => p.y);
+    .attr("x", p => p.x - 40)
+    .attr("y", p => p.y - 40);
 
   p.exit().remove();
 }
@@ -135,6 +139,7 @@ document.getElementById("timeline").addEventListener("click", _ => {
 })
 document.addEventListener('keydown', (ev => {
   const category = categoriesByKey[ev.key.toUpperCase()]
+
   if(mousePosition && category){
     const values = {
       videoId: videoId,

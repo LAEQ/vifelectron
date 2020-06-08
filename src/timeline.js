@@ -48,24 +48,23 @@ const getY = (index) => {
 }
 
 const display = () => {
-
   scale.selectAll(".icon")
     .data(points)
     .enter()
     .append("image")
-    .attr("xlink:href", p => catById[p.categoryId].path)
+    .attr("xlink:href", p => catById[p.categoryId].pathDefault)
     .attr("width", settings.iconSize)
     .attr("height", settings.iconSize)
     .attr('x', d => d.currentTime * 10 + settings.middle)
     .attr("y", (d, i) => getY(i))
 
   d3.selectAll("image").on("mouseover", function(p) {
-    d3.select(this).attr('xlink:href', catById[p.categoryId].pathDanger)
+    d3.select(this).attr('xlink:href', catById[p.categoryId].pathAlert)
     ipcRenderer.send('timeline:icon:mouseover', p)
   });
 
   d3.selectAll("image").on("mouseout", function(p) {
-    d3.select(this).attr('xlink:href', catById[p.categoryId].path)
+    d3.select(this).attr('xlink:href', catById[p.categoryId].pathDefault)
     ipcRenderer.send('timeline:icon:mouseout', p)
   });
 
@@ -75,6 +74,8 @@ ipc.on('editor:video:metadata:response', ((event, args) => {
   video = args.video;
   points = args.points;
   catById = args.catById;
+
+  console.log(catById)
 
   for(let i = 0; i < video.duration + 10; i+= 10){
     scaleBar.push({

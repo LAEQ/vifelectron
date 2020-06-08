@@ -1155,7 +1155,7 @@ class Repository {
           if (category.hasOwnProperty('pathPrimary') === false) {
             category.pathDefault = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, category.pathDefault);
             category.pathPrimary = category.pathDefault.replace('default', 'primary');
-            category.pathDanger = category.pathDefault.replace('default', 'danger');
+            category.pathAlert = category.pathDefault.replace('default', 'danger');
           }
 
           return new _entity_Category__WEBPACK_IMPORTED_MODULE_4__["Category"](category);

@@ -167,6 +167,7 @@ ipcMain.on('editor:timeline', (event, args) => {
     windows['timeline'] = timelineWindow
 
     timelineWindow.onbeforeunload = _ => {
+      console.log("timeline closed")
       windows['timeline'] = null
     }
   }

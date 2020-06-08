@@ -197,7 +197,7 @@ class Repository {
             if(category.hasOwnProperty('pathPrimary') === false){
               category.pathDefault = path.join(this.settings.icon, category.pathDefault)
               category.pathPrimary = category.pathDefault.replace('default', 'primary')
-              category.pathDanger = category.pathDefault.replace('default', 'danger')
+              category.pathAlert = category.pathDefault.replace('default', 'danger')
             }
 
             return new Category(category)
