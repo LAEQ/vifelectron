@@ -839,7 +839,6 @@ const refreshCount = _ => {
 const addPoint = values => {
   const point = new _model_entity_Point__WEBPACK_IMPORTED_MODULE_5__["Point"](values);
   pointList.add(point);
-  pointList.debug();
   repository.savePoints(pointList.values(), videoId);
   electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send("editor:point:add", point);
   refresh();

@@ -188,7 +188,6 @@ const refreshCount = _ => {
 const addPoint = (values) => {
   const point = new Point(values)
   pointList.add(point)
-  pointList.debug()
 
   repository.savePoints( pointList.values(), videoId)
   ipcRenderer.send("editor:point:add", point)

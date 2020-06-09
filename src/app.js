@@ -39,10 +39,7 @@ repository.fetchVideos().then(result => {
       { "data": "hash", title: "#" },
       { "data": "name", title: "name"},
       { "data": "duration", title: "duration"},
-      { "data": "collection", title: "collection", render: (data) => {
-        return data.name + "<button class='btn btn-sm btn-outline-secondary ml-3' data-action='collection-change'>change</button>"
-      }},
-      { "data": "total", title: "total"},
+      { "data": "collection.name", title: "collection"},
       { "data": null, title: "delete"},
       { "data": null, title: "actions"}
     ],
@@ -56,8 +53,7 @@ repository.fetchVideos().then(result => {
       },
       {"targets": -1, "data": null, "defaultContent": "" +
           "<button type='button' class='btn btn-sm btn-warning mr-2' data-action='info'>Info</button>" +
-          "<button type='button' class='btn btn-sm btn-info mr-2' data-action='edit'>Edit</button>" +
-          "<button type='button' class='btn btn-sm btn-success mr-2' data-action='count'>Count</button>"}
+          "<button type='button' class='btn btn-sm btn-success mr-2' data-action='count'>Edit</button>"}
     ]
   });
 
@@ -106,10 +102,6 @@ const showLastVideo = (videos) => {
                       <dd class="col-sm-9">${video.duration}</dd>
                       <dt class="col-sm-3">Collection</dt>
                       <dd class="col-sm-9">${video.collection.name}</dd>
-                      <dt class="col-sm-3">Total count</dt>
-                      <dd class="col-sm-9">${video.total}</dd>
-                      <dt class="col-sm-3">Latest count</dt>
-                      <dd class="col-sm-9">${video.last}</dd>
                 </dl>
                 <div class=""><button id="last-video-start-btn" class="btn btn-outline-success btn-lg" data-video="${video.id}">Start</button></div>
               </div>`
