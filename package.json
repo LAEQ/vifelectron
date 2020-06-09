@@ -44,7 +44,6 @@
     "fs-jetpack": "^2.1.0",
     "jquery": "^3.5.1",
     "js-ffmpeg": "^0.0.26",
-    "moment": "^2.26.0",
     "node-sass": "^4.14.1",
     "popper.js": "^1.16.1",
     "postcss-loader": "^3.0.0",

@@ -669,15 +669,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(uuid__WEBPACK_IMPORTED_MODULE_3__);
 /* harmony import */ var _model_Repository__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./model/Repository */ "./src/model/Repository.js");
 /* harmony import */ var _model_entity_Point__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./model/entity/Point */ "./src/model/entity/Point.js");
-/* harmony import */ var moment__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! moment */ "moment");
-/* harmony import */ var moment__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(moment__WEBPACK_IMPORTED_MODULE_6__);
-/* harmony import */ var d3__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! d3 */ "d3");
-/* harmony import */ var d3__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(d3__WEBPACK_IMPORTED_MODULE_7__);
-/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! jquery */ "jquery");
-/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_8___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_8__);
-/* harmony import */ var bootstrap_slider__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! bootstrap-slider */ "bootstrap-slider");
-/* harmony import */ var bootstrap_slider__WEBPACK_IMPORTED_MODULE_9___default = /*#__PURE__*/__webpack_require__.n(bootstrap_slider__WEBPACK_IMPORTED_MODULE_9__);
-
+/* harmony import */ var d3__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! d3 */ "d3");
+/* harmony import */ var d3__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(d3__WEBPACK_IMPORTED_MODULE_6__);
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! jquery */ "jquery");
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_7__);
+/* harmony import */ var bootstrap_slider__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! bootstrap-slider */ "bootstrap-slider");
+/* harmony import */ var bootstrap_slider__WEBPACK_IMPORTED_MODULE_8___default = /*#__PURE__*/__webpack_require__.n(bootstrap_slider__WEBPACK_IMPORTED_MODULE_8__);
 
 
 
@@ -694,10 +691,10 @@ const repository = new _model_Repository__WEBPACK_IMPORTED_MODULE_4__["default"]
 const manifest = appDir.read("package.json", "json");
 var player = document.querySelector("video");
 var overlay = document.getElementById("overlay");
-var g = d3__WEBPACK_IMPORTED_MODULE_7__["select"]("svg").append("g");
+var g = d3__WEBPACK_IMPORTED_MODULE_6__["select"]("svg").append("g");
 var timer = document.getElementById("timer");
 var catContainer = document.getElementById('container-categories');
-var timeSlider = jquery__WEBPACK_IMPORTED_MODULE_8___default()("#slider").slider({
+var timeSlider = jquery__WEBPACK_IMPORTED_MODULE_7___default()("#slider").slider({
   precision: 2
 });
 const videoId = global.location.search.split("=")[1];
@@ -705,12 +702,17 @@ let video,
     categoryList,
     pointList,
     dictValues,
-    visiblePoints = [];
+    visiblePoints = [],
+    durationString;
 repository.editingVideo(videoId).then(values => {
   dictValues = values; //Set video
 
-  jquery__WEBPACK_IMPORTED_MODULE_8___default()('#video-spinner').remove();
+  jquery__WEBPACK_IMPORTED_MODULE_7___default()('#video-spinner').remove();
   video = values['video'];
+  var measuredTime = new Date(null);
+  measuredTime.setSeconds(video.duration); // specify value of SECONDS
+
+  durationString = measuredTime.toISOString().substr(11, 8);
   document.getElementById("title").innerHTML = video.name;
   player.src = video.path; //Set categories
 
@@ -738,23 +740,27 @@ repository.editingVideo(videoId).then(values => {
 
   refreshCount();
   refresh();
+  timeupdate();
 }); //Refresh and display icons
 
 const refresh = _ => {
   const currentTime = player.currentTime;
   const pointsToShow = pointList.values().filter(p => p.currentTime > currentTime - 10 && p.currentTime < currentTime);
-  let p = d3__WEBPACK_IMPORTED_MODULE_7__["select"]("g").selectAll(".icon").data(pointsToShow);
+  let p = d3__WEBPACK_IMPORTED_MODULE_6__["select"]("g").selectAll(".icon").data(pointsToShow);
   p.enter().append('g').attr('class', 'icon').attr('transform', p => `translate(${p.x - 40}, ${p.y - 40})`).append('circle').attr('cx', 40).attr('cy', 40).attr('r', 50);
-  d3__WEBPACK_IMPORTED_MODULE_7__["selectAll"]('.icon').append("image").attr("xlink:href", p => categoryList.getId(p.categoryId).pathDefault).attr("width", 80).attr("height", 80);
+  d3__WEBPACK_IMPORTED_MODULE_6__["selectAll"]('.icon').append("image").attr("xlink:href", p => categoryList.getId(p.categoryId).pathDefault).attr("width", 80).attr("height", 80);
   p.exit().remove();
-  d3__WEBPACK_IMPORTED_MODULE_7__["selectAll"](".icon").on('click', d => {
+  d3__WEBPACK_IMPORTED_MODULE_6__["selectAll"](".icon").on('click', d => {
     removePoint(d);
   });
 };
 
-var timeupdate = event => {
-  const now = moment__WEBPACK_IMPORTED_MODULE_6__["duration"](player.currentTime);
-  timer.value = `${now.toISOString('H:m:s')} / ${video.duration.toLocaleString()}`;
+var timeupdate = () => {
+  var measuredTime = new Date(null);
+  measuredTime.setSeconds(player.currentTime); // specify value of SECONDS
+
+  var MHSTime = measuredTime.toISOString().substr(11, 8);
+  timer.value = `${MHSTime} / ${durationString}`;
   timeSlider.slider('setValue', player.currentTime / video.duration * 100);
   refresh();
 };
@@ -846,7 +852,7 @@ const addPoint = values => {
 
 const removePoint = point => {
   pointList.remove(point);
-  d3__WEBPACK_IMPORTED_MODULE_7__["select"]("g").selectAll(".icon").data([]).exit().remove();
+  d3__WEBPACK_IMPORTED_MODULE_6__["select"]("g").selectAll(".icon").data([]).exit().remove();
   categoryList.getId(point.categoryId).total--;
   refreshCount();
   repository.savePoints(pointList.values(), videoId);
@@ -859,10 +865,10 @@ ipc.on('controls:rate', (event, args) => {
   player.playbackRate = args;
 });
 ipc.on('timeline:icon:mouseover', (event, args) => {
-  d3__WEBPACK_IMPORTED_MODULE_7__["select"]("g").selectAll(".icon").filter(p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathAlert);
+  d3__WEBPACK_IMPORTED_MODULE_6__["select"]("g").selectAll(".icon").filter(p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathAlert);
 });
 ipc.on('timeline:icon:mouseout', (event, args) => {
-  d3__WEBPACK_IMPORTED_MODULE_7__["select"]("g").selectAll(".icon").filter(p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathDefault);
+  d3__WEBPACK_IMPORTED_MODULE_6__["select"]("g").selectAll(".icon").filter(p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathDefault);
 });
 ipc.on("timeline:opening", _ => {
   const values = {
@@ -1582,17 +1588,6 @@ module.exports = require("fs-jetpack");
 /***/ (function(module, exports) {
 
 module.exports = require("jquery");
-
-/***/ }),
-
-/***/ "moment":
-/*!*************************!*\
-  !*** external "moment" ***!
-  \*************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-module.exports = require("moment");
 
 /***/ }),
 

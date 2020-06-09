@@ -5,7 +5,6 @@ import jetpack from "fs-jetpack";
 import {v4 as uuidv4} from "uuid";
 import Repository from "./model/Repository";
 import {Point} from "./model/entity/Point";
-import * as moment from 'moment';
 import * as d3 from 'd3'
 import $ from 'jquery'
 import * as slider from 'bootstrap-slider'
@@ -24,13 +23,18 @@ var catContainer = document.getElementById('container-categories')
 var timeSlider = $("#slider").slider( {precision: 2});
 
 const videoId = global.location.search.split("=")[1]
-let video, categoryList, pointList, dictValues, visiblePoints = []
+let video, categoryList, pointList, dictValues, visiblePoints = [], durationString
 
 repository.editingVideo(videoId).then(values => {
   dictValues = values
   //Set video
   $('#video-spinner').remove()
   video = values['video']
+
+  var measuredTime = new Date(null);
+  measuredTime.setSeconds(video.duration); // specify value of SECONDS
+  durationString = measuredTime.toISOString().substr(11, 8);
+
   document.getElementById("title").innerHTML = video.name
   player.src = video.path
 
@@ -60,6 +64,7 @@ repository.editingVideo(videoId).then(values => {
 
   refreshCount()
   refresh()
+  timeupdate()
 })
 
 //Refresh and display icons
@@ -86,17 +91,19 @@ const refresh = _ => {
     .attr("width", 80)
     .attr("height", 80)
 
-
   p.exit().remove();
 
   d3.selectAll(".icon").on('click', (d) => {
     removePoint(d)
   })
 }
-var timeupdate = (event) => {
-  const now = moment.duration(player.currentTime)
+var timeupdate = () => {
+  var measuredTime = new Date(null);
+  measuredTime.setSeconds(player.currentTime); // specify value of SECONDS
+  var MHSTime = measuredTime.toISOString().substr(11, 8);
 
-  timer.value = `${now.toISOString('H:m:s')} / ${video.duration.toLocaleString()}`
+
+  timer.value = `${MHSTime} / ${durationString}`
   timeSlider.slider('setValue', player.currentTime / video.duration * 100);
 
   refresh()
