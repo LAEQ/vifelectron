@@ -1,13 +1,12 @@
 import './scss/app.scss'
 
 import { remote, ipcRenderer } from "electron";
+import $ from 'jquery'
 import jetpack from "fs-jetpack";
 import path from 'path';
 import Settings from "./helpers/initialize";
 import Repository from "./model/Repository";
 import ffmpeg from "fluent-ffmpeg";
-
-import {Video} from "./model/entity/Video";
 
 const app = remote.app;
 const ipc = remote.ipcMain
@@ -17,6 +16,31 @@ const repository = new Repository();
 
 const videoId = global.location.search.split("=")[1]
 const video = repository.fetchVideo(videoId)
+let collections
+repository.fetchCollection().then(c => {
+  collections = c
+
+  let html = `<dt class="col-sm-6">Collections</dt>
+                <dd class="col-sm-6">
+                <select class="form-control" id="select-collection">`
+
+    collections.forEach(col => {
+      const selected = video.collection.id === col.id ? "selected" : ""
+      html += `<option value="${col.id}" ${selected}>${col.name}</option>`
+    })
+
+  html += '</select></dd>'
+
+  document.getElementById('video-features').innerHTML = html
+
+  $("#select-collection").change((event) => {
+    const id = $(event.target).children("option:selected").val();
+    video.collection = collections.find(c => c.id == id)
+    console.log(video.collection)
+    repository.saveVideo(video)
+  })
+})
+
 
 document.getElementById('title').innerHTML = video.name
 
@@ -32,7 +56,7 @@ const showVideoDetail = (metadata) => {
   const audioContainer = document.getElementById('audio-container')
   const videoContainer = document.getElementById('video-container')
 
-  const imgPath = `${video.id}.png`
+  const imgPath = `${video.hash}.png`
 
   //Img
   imgContainer.innerHTML = `<img class="img-thumbnail" src="${path.join(settings.video, imgPath)}" />`
@@ -42,8 +66,8 @@ const showVideoDetail = (metadata) => {
   const fileKeys = ['filename', 'format_long_name', 'duration', 'size', 'bit_rate']
   const tagKeys = ['major_brand', 'minor_version', 'encoder']
 
-  fileKeys.forEach(k => {html += `<dt class="col-sm-6">${k}</dt><dd class="col-sm-6">${metadata['format'][k]}</dd>`})
-  tagKeys.forEach(k => {html += `<dt class="col-sm-6">${k}</dt><dd class="col-sm-6">${metadata['format']['tags'][k]}</dd>`})
+  fileKeys.forEach(k => {html += `<dt class="col-sm-3">${k}</dt><dd class="col-sm-9">${metadata['format'][k]}</dd>`})
+  tagKeys.forEach(k => {html += `<dt class="col-sm-3">${k}</dt><dd class="col-sm-9">${metadata['format']['tags'][k]}</dd>`})
   fileContainer.innerHTML = html
 
   //Audio keys:

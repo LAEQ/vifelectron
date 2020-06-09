@@ -133,12 +133,22 @@ ipcMain.on('editor:open', (event, args) => {
 
   windows['editor'] = editorWindow
 
-  editorWindow.onbeforeunload = _ => {
-    windows['editor'] = null
-  }
+  editorWindow.on('close', _ => {
+    if(windows['timeline']){
+      windows['timeline'].close()
+      windows['timeline'] = undefined
+    }
+
+    if(windows['controls']){
+      windows['controls'].close()
+      windows['controls'] = undefined
+    }
+  })
+
 })
-ipcMain.on('editor:timeline', (event, args) => {
-  if(windows["timeline"] === undefined){
+ipcMain.on('editor:timeline:toogle', (event, args) => {
+  console.log(windows['timeline'])
+  if(! windows["timeline"]){
     let timelineWindow = createWindow('timeline', {
       width: 1000,
       height: 100,
@@ -159,6 +169,10 @@ ipcMain.on('editor:timeline', (event, args) => {
 
     }).catch(err => console.log(err))
 
+    timelineWindow.on('close', _ => {
+      windows['timeline'] = null
+    })
+
 
     // if (env.name === "development") {
     timelineWindow.openDevTools();
@@ -166,10 +180,10 @@ ipcMain.on('editor:timeline', (event, args) => {
 
     windows['timeline'] = timelineWindow
 
-    timelineWindow.onbeforeunload = _ => {
-      console.log("timeline closed")
+    timelineWindow.on('closed', _ => {
       windows['timeline'] = null
-    }
+    })
+
   }
 })
 

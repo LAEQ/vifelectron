@@ -31,19 +31,20 @@ var videos, table;
 
 repository.fetchVideos().then(result => {
   videos = result;
-
-  showLastVideo(result)
+  showLastVideo(videos)
 
   table = $('#table').DataTable({
-    "data": videos,
+    "data": Array.from(videos.values()),
     "columns": [
       { "data": "hash", title: "#" },
       { "data": "name", title: "name"},
       { "data": "duration", title: "duration"},
-      { "data": "collection.name", title: "collection"},
+      { "data": "collection", title: "collection", render: (data) => {
+        return data.name + "<button class='btn btn-sm btn-outline-secondary ml-3' data-action='collection-change'>change</button>"
+      }},
       { "data": "total", title: "total"},
-      { "data": null},
-      { "data": null}
+      { "data": null, title: "delete"},
+      { "data": null, title: "actions"}
     ],
     "columnDefs": [
       {targets: 0, render: function(id) {
@@ -51,11 +52,12 @@ repository.fetchVideos().then(result => {
           return `<img src="${src}.png" width="130" />`
         }},
       {"targets": -2, "data": null, "defaultContent":
-            "<button type='button' class='btn btn-sm btn-outline-danger' data-action='delete'>Delete</button>"
+            "<button type='button' class='btn btn-sm btn-outline-danger mr-2' data-action='delete'>Delete</button>"
       },
       {"targets": -1, "data": null, "defaultContent": "" +
           "<button type='button' class='btn btn-sm btn-warning mr-2' data-action='info'>Info</button>" +
-          "<button type='button' class='btn btn-sm btn-info mr-2' data-action='edit'>Edit</button>"}
+          "<button type='button' class='btn btn-sm btn-info mr-2' data-action='edit'>Edit</button>" +
+          "<button type='button' class='btn btn-sm btn-success mr-2' data-action='count'>Count</button>"}
     ]
   });
 
@@ -67,10 +69,16 @@ repository.fetchVideos().then(result => {
     switch ($(this).data('action')) {
 
       case "info":
-        evtName = "video:tool"
+        evtName = "video:tool";
+        break;
+      case "collection-change":
+          evtName = "video:collection:change";
+        break;
+      case "edit":
+        evtName = "video:edit";
         break;
       case "delete":
-        evtName = "video:delete"
+        evtName = "video:delete";
         break;
       default:
         evtName = "editor:open"
@@ -82,9 +90,8 @@ repository.fetchVideos().then(result => {
 })
 
 const showLastVideo = (videos) => {
-
-  if(videos && videos.length > 0){
-    const video = videos[videos.length - 1]
+  if(videos.size > 0){
+    const video = videos.entries().next().value[1]
     const filePath = path.join(settings.video, `${video.hash}.png`)
     const html = `<div class="col-md-4">
                 <img src="${filePath}" alt="image" class="img-thumbnail" >
@@ -133,7 +140,7 @@ document.getElementById("add").addEventListener("click", _ => {
         }
 
         const video = new Video(obj)
-        videos.push(video)
+        videos.set(id, video)
 
         //Create point file
         const pointFile = path.join(settings.video, `${id}.json`)
@@ -156,7 +163,8 @@ document.getElementById("add").addEventListener("click", _ => {
             folder: settings.video,
             size: '520x?'
           }).on('end', _ => {
-            repository.save(videos, "video.json")
+            console.log(Array.from(videos.values()))
+            repository.save(Array.from(videos.values()), "video.json")
             var t = $('#table').DataTable();
             t.row.add(video).draw(false)
             showLastVideo(videos)
@@ -170,6 +178,7 @@ document.getElementById("add").addEventListener("click", _ => {
     })
  })
 
+
 ipc.on("video:update", (event, args) => {
   if(table){
     table.rows().data().clear()
@@ -178,19 +187,20 @@ ipc.on("video:update", (event, args) => {
 });
 
 ipc.on("video:delete", ((event, args) => {
-
-  const video = repository.fetchVideo(args)
-
   let response = dialog.showMessageBoxSync(remote.getCurrentWindow(), {
     buttons: ["NO", "YES"],
-    message: `Are you sure you want to delete this video: ${video.name}`
+    message: `Are you sure you want to delete this video.`
   })
 
   if(response === 1){
-    repository.deleteVideo(video)
-    videos = videos.filter(v => v.id !== video.id)
+    videos.delete(args)
+    repository.save(Array.from(videos.values()), 'video.json')
 
-    table.clear().rows.add(videos).draw();
+    table.clear().rows.add(Array.from(videos.values())).draw();
     showLastVideo(videos)
   }
+}))
+
+ipc.on("video:collection:change", ((event, args) => {
+
 }))

@@ -966,13 +966,11 @@ class Repository {
 
   async fetchVideos() {
     const file = this.settings.getVideoPath();
-    let result = [];
+    let result = new Map();
 
     if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
       await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
-        result = r.map(video => {
-          return new _entity_Video__WEBPACK_IMPORTED_MODULE_6__["Video"](video);
-        });
+        r.forEach(video => result.set(video.id, new _entity_Video__WEBPACK_IMPORTED_MODULE_6__["Video"](video)));
       });
       return result;
     } else {
@@ -1008,20 +1006,59 @@ class Repository {
     }
   }
 
+  async editingVideo(videoId) {
+    const video = this.fetchVideo(videoId);
+    const categories = this.fetchCategories(video.collection.categoryIds);
+    const points = this.fetchPoints(videoId);
+    return Promise.all([categories, points]).then(values => {
+      return {
+        'video': video,
+        'categories': values[0],
+        'points': values[1]
+      };
+    });
+  }
+
+  async fetchCategories(ids) {
+    return fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(this.settings.getCategoryPath(), 'json').then(json => {
+      const categories = [];
+      json.forEach(j => {
+        if (ids.includes(j.id)) {
+          categories.push(this.generateCategory(j));
+        }
+      });
+      return new _entity_Category__WEBPACK_IMPORTED_MODULE_4__["CategoryList"](categories);
+    });
+  }
+
+  generateCategory(obj) {
+    let category = new _entity_Category__WEBPACK_IMPORTED_MODULE_4__["Category"](obj);
+    category.pathDefault = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, obj.pathDefault);
+    category.pathPrimary = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, obj.pathDefault.replace('default', 'primary'));
+    category.pathDanger = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, obj.pathDefault.replace('default', 'danger'));
+    return category;
+  }
+
   fetchVideo(id) {
-    return fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.read(this.settings.getVideoPath(), "json").filter(obj => obj.id === id).map(v => new _entity_Video__WEBPACK_IMPORTED_MODULE_6__["Video"](v))[0];
+    var json = fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.read(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.db, 'video.json'), 'json');
+    let video;
+
+    for (let i = 0; i < json.length; i++) {
+      if (json[i].id === id) {
+        return new _entity_Video__WEBPACK_IMPORTED_MODULE_6__["Video"](json[i]);
+      }
+    }
+
+    if (video === undefined) {
+      //@todo log no video found
+      throw 'No video found.';
+    }
   }
 
   async fetchPoints(videoId) {
-    let result = [];
-    const points = fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.read(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.video, `${videoId}.json`), "json");
-    result = points.map(obj => {
-      return new _entity_Point__WEBPACK_IMPORTED_MODULE_7__["Point"](obj);
+    return fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.video, `${videoId}.json`), "json").then(json => {
+      return new _entity_Point__WEBPACK_IMPORTED_MODULE_7__["PointList"](json);
     });
-    console.log(result); // var r = require("collections/sorted-set")
-    // result = r(result)
-
-    return result;
   }
 
   defaultCollection() {
@@ -1103,7 +1140,6 @@ class Repository {
   async fetchCategoryByCollection(collection) {
     const file = this.settings.getCategoryPath();
     let result = [];
-    console.log(collection);
 
     if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
       await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
@@ -1137,9 +1173,16 @@ class Repository {
 
   deleteVideo(video) {
     this.fetchVideos().then(videoList => {
-      const list = videoList.filter(v => v.id !== video.id);
+      const list = videoList.delet(video.id);
       this.save(list, 'video.json');
       this.deleteFilesIfExist(video.id);
+    });
+  }
+
+  saveVideo(video) {
+    this.fetchVideos().then(videos => {
+      videos.set(video.id, video);
+      this.save(videos, "video.json");
     });
   }
 
@@ -1153,12 +1196,13 @@ class Repository {
 /*!**************************************!*\
   !*** ./src/model/entity/Category.js ***!
   \**************************************/
-/*! exports provided: Category */
+/*! exports provided: Category, CategoryList */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Category", function() { return Category; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "CategoryList", function() { return CategoryList; });
 class Category {
   constructor(obj) {
     this.id = obj.id;
@@ -1171,8 +1215,24 @@ class Category {
 
 }
 
-class Collection {
-  constructor() {}
+class CategoryList {
+  constructor(categories) {
+    this.categories = categories;
+    this.mapKey = new Map();
+    this.mapId = new Map();
+    categories.forEach(c => {
+      this.mapId.set(c.id, c);
+      this.mapKey.set(c.shortcut, c);
+    });
+  }
+
+  getId(id) {
+    return this.mapId.get(id);
+  }
+
+  getKey(key) {
+    return this.mapKey.get(key);
+  }
 
 }
 
@@ -1206,18 +1266,16 @@ class Collection {
 /*!***********************************!*\
   !*** ./src/model/entity/Point.js ***!
   \***********************************/
-/*! exports provided: Point */
+/*! exports provided: Point, PointList */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Point", function() { return Point; });
-/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! uuid */ "uuid");
-/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(uuid__WEBPACK_IMPORTED_MODULE_0__);
-
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "PointList", function() { return PointList; });
 class Point {
   constructor(obj) {
-    this.id = Object(uuid__WEBPACK_IMPORTED_MODULE_0__["v4"])();
+    this.id = obj.id;
     this.videoId = obj.videoId;
     this.categoryId = obj.categoryId;
     this.x = obj.x;
@@ -1226,6 +1284,36 @@ class Point {
   }
 
 }
+
+class PointList {
+  constructor(json) {
+    this.map = new Map();
+    json.forEach(obj => {
+      const pt = new Point(obj);
+      this.map.set(pt.id, pt);
+    });
+  }
+
+  debug() {
+    console.log(Array.from(this.map.keys()));
+  }
+
+  add(point) {
+    this.map.set(point.id, point);
+  }
+
+  remove(point) {
+    console.log(point);
+    this.map.delete(this.map.delete(point.id));
+  }
+
+  values() {
+    return Array.from(this.map.values());
+  }
+
+}
+
+
 
 /***/ }),
 

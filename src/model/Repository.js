@@ -2,12 +2,12 @@ import Settings from "../helpers/initialize";
 import path from 'path'
 import {v4 as uuidv4} from 'uuid'
 import jetpack from "fs-jetpack";
-import {Category} from "./entity/Category";
+import {Category, CategoryList} from "./entity/Category";
 import {Collection} from "./entity/Collection";
 import {Video} from "./entity/Video";
-import {Point} from "./entity/Point"
-
+import {Point, PointList} from "./entity/Point"
 import {VideoStatistic} from "./entity/VideoStatistic";
+
 import * as SortedSet from 'collections'
 
 class Repository {
@@ -27,7 +27,6 @@ class Repository {
             category.pathPrimary = category.pathDefault.replace('default', 'primary')
             category.pathDanger = category.pathDefault.replace('default', 'danger')
           }
-
           return new Category(category)
         })
       })
@@ -40,13 +39,12 @@ class Repository {
 
   async fetchVideos(){
     const file = this.settings.getVideoPath()
-    let result = []
+    let result = new Map()
 
     if(jetpack.exists(file)){
       await jetpack.readAsync(file, "json").then(r => {
-        result = r.map(video => {
-          return new Video(video)
-        })
+        r.forEach(video =>
+          result.set(video.id, new Video(video)))
       })
 
       return result
@@ -84,23 +82,62 @@ class Repository {
     }
   }
 
+  async editingVideo(videoId){
+    const video = this.fetchVideo(videoId)
+    const categories = this.fetchCategories(video.collection.categoryIds)
+    const points = this.fetchPoints(videoId)
+
+    return Promise.all([categories, points]).then(values => {
+      return {
+        'video': video,
+        'categories': values[0],
+        'points': values[1]
+      }
+    })
+  }
+
+  async fetchCategories(ids){
+    return jetpack.readAsync(this.settings.getCategoryPath(), 'json' ).then( json => {
+      const categories = []
+      json.forEach(j => {
+        if(ids.includes(j.id)){
+          categories.push(this.generateCategory(j));
+        }
+      });
+
+      return new CategoryList(categories)
+    });
+  }
+
+  generateCategory(obj){
+    let category = new Category(obj)
+    category.pathDefault = path.join(this.settings.icon, obj.pathDefault)
+    category.pathPrimary = path.join(this.settings.icon, obj.pathDefault.replace('default', 'primary'))
+    category.pathDanger = path.join(this.settings.icon, obj.pathDefault.replace('default', 'danger'))
+
+    return category
+  }
+
   fetchVideo(id){
-    return jetpack.read(this.settings.getVideoPath(), "json").filter(obj => obj.id === id).map(v => new Video(v))[0]
+    var json = jetpack.read(path.join(this.settings.db, 'video.json'), 'json')
+    let video;
+
+    for(let i = 0; i < json.length; i++){
+      if(json[i].id === id){
+        return new Video(json[i])
+      }
+    }
+
+    if(video === undefined){
+      //@todo log no video found
+      throw 'No video found.'
+    }
   }
 
   async fetchPoints(videoId){
-    let result = []
-    const points = jetpack.read(path.join(this.settings.video, `${videoId}.json`), "json")
-    result = points.map(obj => {
-        return new Point(obj)
+    return jetpack.readAsync(path.join(this.settings.video, `${videoId}.json`), "json").then(json => {
+      return new PointList(json)
     })
-
-    console.log(result)
-
-    // var r = require("collections/sorted-set")
-    // result = r(result)
-
-    return result
   }
 
   defaultCollection(){
@@ -189,8 +226,6 @@ class Repository {
       const file = this.settings.getCategoryPath()
       let result = []
 
-      console.log(collection)
-
       if(jetpack.exists(file)){
         await jetpack.readAsync(file, "json").then(r => {
           result = r.map(category => {
@@ -222,9 +257,17 @@ class Repository {
 
   deleteVideo(video) {
     this.fetchVideos().then(videoList => {
-      const list = videoList.filter(v => v.id !== video.id)
+      const list = videoList.delet(video.id)
       this.save(list, 'video.json')
       this.deleteFilesIfExist(video.id)
+    })
+  }
+
+  saveVideo(video) {
+    this.fetchVideos().then( videos => {
+        videos.set(video.id, video)
+
+        this.save(videos, "video.json")
     })
   }
 }

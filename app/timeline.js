@@ -650,6 +650,600 @@ module.exports = function (list, options) {
 
 /***/ }),
 
+/***/ "./src/helpers/initialize.js":
+/*!***********************************!*\
+  !*** ./src/helpers/initialize.js ***!
+  \***********************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! path */ "path");
+/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(path__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! fs-jetpack */ "fs-jetpack");
+/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(fs_jetpack__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var ffbinaries__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ffbinaries */ "ffbinaries");
+/* harmony import */ var ffbinaries__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(ffbinaries__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _model_Repository__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../model/Repository */ "./src/model/Repository.js");
+
+
+
+
+
+var os = __webpack_require__(/*! os */ "os");
+
+var platform = `${os.platform() - os.arch()}`;
+
+class Settings {
+  constructor() {
+    this.homeDir = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(__webpack_require__(/*! os */ "os").homedir(), "vifeco");
+    this.db = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.homeDir, "db");
+    this.icon = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.homeDir, "icons");
+    this.video = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.homeDir, "video");
+    this.binaries = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.homeDir, "binaries");
+    this.log = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.homeDir, "log");
+  }
+
+  getErrorLog() {
+    return path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.log, "error.log");
+  }
+
+  getLog() {
+    return path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.log, "info.log");
+  }
+
+  getCategoryPath() {
+    return path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.db, "category.json");
+  }
+
+  getCollectionPath() {
+    return path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.db, "collection.json");
+  }
+
+  getVideoPath() {
+    return path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.db, "video.json");
+  }
+
+  getFfmpegPath() {
+    return path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.binaries, "ffmpeg");
+  }
+
+  getFfprobePath() {
+    return path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.binaries, 'ffprobe');
+  }
+
+  init() {
+    const dirs = [this.homeDir, this.db, this.icon, this.video, this.binaries];
+    dirs.forEach(d => fs_jetpack__WEBPACK_IMPORTED_MODULE_1___default.a.dir(d)); //Add default categories / collection
+
+    fs_jetpack__WEBPACK_IMPORTED_MODULE_1___default.a.findAsync(path__WEBPACK_IMPORTED_MODULE_0___default.a.join(__dirname, "resources", "json"), {
+      matching: "*.json"
+    }).then(r => {
+      r.forEach(file => {
+        const filename = path__WEBPACK_IMPORTED_MODULE_0___default.a.basename(file);
+        const dest = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.db, filename);
+
+        if (fs_jetpack__WEBPACK_IMPORTED_MODULE_1___default.a.exists(dest) === false) {
+          fs_jetpack__WEBPACK_IMPORTED_MODULE_1___default.a.readAsync(file, "json").then(content => {
+            fs_jetpack__WEBPACK_IMPORTED_MODULE_1___default.a.file(dest, {
+              mode: '0777',
+              content: content
+            });
+          });
+        }
+      });
+    }); //Add default icons
+
+    fs_jetpack__WEBPACK_IMPORTED_MODULE_1___default.a.findAsync(path__WEBPACK_IMPORTED_MODULE_0___default.a.join(__dirname, "resources", "icons"), {
+      matching: "*.svg"
+    }).then(r => {
+      r.forEach(f => {
+        const filename = path__WEBPACK_IMPORTED_MODULE_0___default.a.basename(f);
+        const dest = path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.icon, filename);
+
+        if (fs_jetpack__WEBPACK_IMPORTED_MODULE_1___default.a.exists(dest) === false) {
+          fs_jetpack__WEBPACK_IMPORTED_MODULE_1___default.a.copyAsync(f, dest);
+        }
+      });
+    });
+
+    if (fs_jetpack__WEBPACK_IMPORTED_MODULE_1___default.a.exists(this.getFfmpegPath()) === false) {
+      ffbinaries__WEBPACK_IMPORTED_MODULE_2__["downloadBinaries"](['ffmpeg', 'ffprobe'], {
+        platform: platform,
+        quiet: true,
+        destination: this.binaries
+      }, function (err) {
+        if (err) {
+          console.log("Failed to download ffbinaries");
+        } else {
+          console.log("FFbinaries donwloaded successfully");
+        }
+      });
+    }
+  }
+
+}
+
+/* harmony default export */ __webpack_exports__["default"] = (Settings);
+
+/***/ }),
+
+/***/ "./src/model/Repository.js":
+/*!*********************************!*\
+  !*** ./src/model/Repository.js ***!
+  \*********************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _helpers_initialize__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../helpers/initialize */ "./src/helpers/initialize.js");
+/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! path */ "path");
+/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(path__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! uuid */ "uuid");
+/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(uuid__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! fs-jetpack */ "fs-jetpack");
+/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(fs_jetpack__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var _entity_Category__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./entity/Category */ "./src/model/entity/Category.js");
+/* harmony import */ var _entity_Collection__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./entity/Collection */ "./src/model/entity/Collection.js");
+/* harmony import */ var _entity_Video__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./entity/Video */ "./src/model/entity/Video.js");
+/* harmony import */ var _entity_Point__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./entity/Point */ "./src/model/entity/Point.js");
+/* harmony import */ var _entity_VideoStatistic__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./entity/VideoStatistic */ "./src/model/entity/VideoStatistic.js");
+/* harmony import */ var collections__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! collections */ "collections");
+/* harmony import */ var collections__WEBPACK_IMPORTED_MODULE_9___default = /*#__PURE__*/__webpack_require__.n(collections__WEBPACK_IMPORTED_MODULE_9__);
+
+
+
+
+
+
+
+
+
+
+
+class Repository {
+  constructor() {
+    this.settings = new _helpers_initialize__WEBPACK_IMPORTED_MODULE_0__["default"]();
+  }
+
+  async fetchCategory() {
+    const file = this.settings.getCategoryPath();
+    let result = [];
+
+    if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
+      await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
+        result = r.map(category => {
+          if (category.hasOwnProperty('pathPrimary') === false) {
+            category.pathDefault = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, category.pathDefault);
+            category.pathPrimary = category.pathDefault.replace('default', 'primary');
+            category.pathDanger = category.pathDefault.replace('default', 'danger');
+          }
+
+          return new _entity_Category__WEBPACK_IMPORTED_MODULE_4__["Category"](category);
+        });
+      });
+      return result;
+    } else {
+      return result;
+    }
+  }
+
+  async fetchVideos() {
+    const file = this.settings.getVideoPath();
+    let result = new Map();
+
+    if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
+      await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
+        r.forEach(video => result.set(video.id, new _entity_Video__WEBPACK_IMPORTED_MODULE_6__["Video"](video)));
+      });
+      return result;
+    } else {
+      return result;
+    }
+  }
+
+  async fetchVideosGrouped() {
+    const file = this.settings.getVideoPath();
+    let videos = [];
+    let result = [];
+
+    if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
+      await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
+        videos = r.map(video => {
+          return new _entity_Video__WEBPACK_IMPORTED_MODULE_6__["Video"](video);
+        });
+      });
+      videos.forEach(v => {
+        let collection = result.find(c => c.hash === v.hash);
+
+        if (collection === undefined) {
+          let collection = new _entity_VideoStatistic__WEBPACK_IMPORTED_MODULE_8__["VideoStatistic"]();
+          collection.add(v);
+          result.push(collection);
+        } else {
+          collection.add(v);
+        }
+      });
+      return result;
+    } else {
+      return [];
+    }
+  }
+
+  async editingVideo(videoId) {
+    const video = this.fetchVideo(videoId);
+    const categories = this.fetchCategories(video.collection.categoryIds);
+    const points = this.fetchPoints(videoId);
+    return Promise.all([categories, points]).then(values => {
+      return {
+        'video': video,
+        'categories': values[0],
+        'points': values[1]
+      };
+    });
+  }
+
+  async fetchCategories(ids) {
+    return fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(this.settings.getCategoryPath(), 'json').then(json => {
+      const categories = [];
+      json.forEach(j => {
+        if (ids.includes(j.id)) {
+          categories.push(this.generateCategory(j));
+        }
+      });
+      return new _entity_Category__WEBPACK_IMPORTED_MODULE_4__["CategoryList"](categories);
+    });
+  }
+
+  generateCategory(obj) {
+    let category = new _entity_Category__WEBPACK_IMPORTED_MODULE_4__["Category"](obj);
+    category.pathDefault = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, obj.pathDefault);
+    category.pathPrimary = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, obj.pathDefault.replace('default', 'primary'));
+    category.pathDanger = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, obj.pathDefault.replace('default', 'danger'));
+    return category;
+  }
+
+  fetchVideo(id) {
+    var json = fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.read(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.db, 'video.json'), 'json');
+    let video;
+
+    for (let i = 0; i < json.length; i++) {
+      if (json[i].id === id) {
+        return new _entity_Video__WEBPACK_IMPORTED_MODULE_6__["Video"](json[i]);
+      }
+    }
+
+    if (video === undefined) {
+      //@todo log no video found
+      throw 'No video found.';
+    }
+  }
+
+  async fetchPoints(videoId) {
+    return fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.video, `${videoId}.json`), "json").then(json => {
+      return new _entity_Point__WEBPACK_IMPORTED_MODULE_7__["PointList"](json);
+    });
+  }
+
+  defaultCollection() {
+    const collections = fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.read(this.settings.getCollectionPath(), "json");
+    return collections.filter(c => c.default).map(c => new _entity_Collection__WEBPACK_IMPORTED_MODULE_5__["Collection"](c))[0];
+  }
+
+  capitalize(s) {
+    if (typeof s !== 'string') return '';
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  createCategory(form) {
+    const uuid = Object(uuid__WEBPACK_IMPORTED_MODULE_2__["v4"])();
+    const files = ['default', 'primary', 'alert'];
+    const values = {
+      id: uuid,
+      name: form[0].value,
+      pathDefault: "",
+      pathPrimary: "",
+      pathDanger: "",
+      shortcut: form[1].value
+    };
+
+    const filing = (f, type) => {
+      const file = f.files[0];
+      const ext = path__WEBPACK_IMPORTED_MODULE_1___default.a.extname(file.name);
+      const src = file.path;
+      const dest = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, `${uuid}-${type}${ext}`);
+
+      if (ext !== "" && fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(src) === 'file') {
+        fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.copy(src, dest);
+      }
+
+      values[`path${this.capitalize(type)}`] = dest;
+    };
+
+    filing(form[2], 'default');
+    filing(form[3], 'primary');
+    filing(form[4], 'alert');
+    const category = new _entity_Category__WEBPACK_IMPORTED_MODULE_4__["Category"](values);
+    return category;
+  }
+
+  save(obj, filename) {
+    fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.write(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.db, filename), obj);
+  }
+
+  savePoints(points, videoId) {
+    fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.write(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.video, `${videoId}.json`), points);
+  }
+
+  async fetchCollection() {
+    const file = this.settings.getCollectionPath();
+    let result = [];
+
+    if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
+      await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
+        result = r.map(c => {
+          return new _entity_Collection__WEBPACK_IMPORTED_MODULE_5__["Collection"](c);
+        });
+      });
+      return result;
+    } else {
+      return result;
+    }
+  }
+
+  createCollection(form) {
+    const collection = new _entity_Collection__WEBPACK_IMPORTED_MODULE_5__["Collection"]({
+      id: Object(uuid__WEBPACK_IMPORTED_MODULE_2__["v4"])(),
+      name: form[0].value,
+      default: form[1].checked,
+      categoryIds: form[2].value.split(";").sort()
+    });
+    return collection;
+  }
+
+  async fetchCategoryByCollection(collection) {
+    const file = this.settings.getCategoryPath();
+    let result = [];
+
+    if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
+      await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
+        result = r.map(category => {
+          if (category.hasOwnProperty('pathPrimary') === false) {
+            category.pathDefault = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, category.pathDefault);
+            category.pathPrimary = category.pathDefault.replace('default', 'primary');
+            category.pathAlert = category.pathDefault.replace('default', 'danger');
+          }
+
+          return new _entity_Category__WEBPACK_IMPORTED_MODULE_4__["Category"](category);
+        });
+      });
+      return result.filter(c => collection.categoryIds.includes(c.id));
+    } else {
+      return result;
+    }
+  }
+
+  deleteFilesIfExist(id) {
+    fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.findAsync(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.video), {
+      matching: `${id}.*`
+    }).then(r => {
+      r.forEach(file => {
+        if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file) === 'file') {
+          fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.removeAsync(file);
+        }
+      });
+    });
+  }
+
+  deleteVideo(video) {
+    this.fetchVideos().then(videoList => {
+      const list = videoList.delet(video.id);
+      this.save(list, 'video.json');
+      this.deleteFilesIfExist(video.id);
+    });
+  }
+
+  saveVideo(video) {
+    this.fetchVideos().then(videos => {
+      videos.set(video.id, video);
+      this.save(videos, "video.json");
+    });
+  }
+
+}
+
+/* harmony default export */ __webpack_exports__["default"] = (Repository);
+
+/***/ }),
+
+/***/ "./src/model/entity/Category.js":
+/*!**************************************!*\
+  !*** ./src/model/entity/Category.js ***!
+  \**************************************/
+/*! exports provided: Category, CategoryList */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Category", function() { return Category; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "CategoryList", function() { return CategoryList; });
+class Category {
+  constructor(obj) {
+    this.id = obj.id;
+    this.name = obj.name;
+    this.pathDefault = obj.pathDefault;
+    this.pathPrimary = obj.pathPrimary;
+    this.pathAlert = obj.pathAlert;
+    this.shortcut = obj.shortcut;
+  }
+
+}
+
+class CategoryList {
+  constructor(categories) {
+    this.categories = categories;
+    this.mapKey = new Map();
+    this.mapId = new Map();
+    categories.forEach(c => {
+      this.mapId.set(c.id, c);
+      this.mapKey.set(c.shortcut, c);
+    });
+  }
+
+  getId(id) {
+    return this.mapId.get(id);
+  }
+
+  getKey(key) {
+    return this.mapKey.get(key);
+  }
+
+}
+
+
+
+/***/ }),
+
+/***/ "./src/model/entity/Collection.js":
+/*!****************************************!*\
+  !*** ./src/model/entity/Collection.js ***!
+  \****************************************/
+/*! exports provided: Collection */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Collection", function() { return Collection; });
+class Collection {
+  constructor(obj) {
+    this.id = obj.id;
+    this.name = obj.name;
+    this.categoryIds = obj.categoryIds;
+    this.default = obj.default;
+  }
+
+}
+
+/***/ }),
+
+/***/ "./src/model/entity/Point.js":
+/*!***********************************!*\
+  !*** ./src/model/entity/Point.js ***!
+  \***********************************/
+/*! exports provided: Point, PointList */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Point", function() { return Point; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "PointList", function() { return PointList; });
+class Point {
+  constructor(obj) {
+    this.id = obj.id;
+    this.videoId = obj.videoId;
+    this.categoryId = obj.categoryId;
+    this.x = obj.x;
+    this.y = obj.y;
+    this.currentTime = obj.currentTime;
+  }
+
+}
+
+class PointList {
+  constructor(json) {
+    this.map = new Map();
+    json.forEach(obj => {
+      const pt = new Point(obj);
+      this.map.set(pt.id, pt);
+    });
+  }
+
+  debug() {
+    console.log(Array.from(this.map.keys()));
+  }
+
+  add(point) {
+    this.map.set(point.id, point);
+  }
+
+  remove(point) {
+    console.log(point);
+    this.map.delete(this.map.delete(point.id));
+  }
+
+  values() {
+    return Array.from(this.map.values());
+  }
+
+}
+
+
+
+/***/ }),
+
+/***/ "./src/model/entity/Video.js":
+/*!***********************************!*\
+  !*** ./src/model/entity/Video.js ***!
+  \***********************************/
+/*! exports provided: Video */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Video", function() { return Video; });
+/* harmony import */ var _Collection__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Collection */ "./src/model/entity/Collection.js");
+/* harmony import */ var crypto__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! crypto */ "crypto");
+/* harmony import */ var crypto__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(crypto__WEBPACK_IMPORTED_MODULE_1__);
+
+
+class Video {
+  constructor(obj) {
+    let hasher = crypto__WEBPACK_IMPORTED_MODULE_1__["createHash"]('md5');
+    this.id = obj.id;
+    this.name = obj.name;
+    this.hash = hasher.update(obj.name).digest('hex');
+    this.path = obj.path;
+    this.duration = obj.duration;
+    this.collection = new _Collection__WEBPACK_IMPORTED_MODULE_0__["Collection"](obj.collection);
+    this.total = obj.total;
+  }
+
+}
+
+/***/ }),
+
+/***/ "./src/model/entity/VideoStatistic.js":
+/*!********************************************!*\
+  !*** ./src/model/entity/VideoStatistic.js ***!
+  \********************************************/
+/*! exports provided: VideoStatistic */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "VideoStatistic", function() { return VideoStatistic; });
+class VideoStatistic {
+  constructor() {
+    this.videos = [];
+    this.name = "";
+    this.hash = "";
+  }
+
+  add(video) {
+    if (this.videos.length === 0) {
+      this.hash = video.hash;
+      this.name = video.name;
+    }
+
+    this.videos.push(video);
+  }
+
+}
+
+/***/ }),
+
 /***/ "./src/scss/app.scss":
 /*!***************************!*\
   !*** ./src/scss/app.scss ***!
@@ -694,22 +1288,24 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var d3__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(d3__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! electron */ "electron");
 /* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(electron__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _model_Repository__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./model/Repository */ "./src/model/Repository.js");
+
 
 
 
 const ipc = electron__WEBPACK_IMPORTED_MODULE_2__["remote"].ipcMain;
+const repository = new _model_Repository__WEBPACK_IMPORTED_MODULE_3__["default"]();
 var svg = d3__WEBPACK_IMPORTED_MODULE_1__["select"]('svg');
 const scale = svg.append('g').attr('class', 'scale');
 var scaleBar = [];
 var settings;
-var video;
-var points;
-var catById;
 var icons = {};
 var scaleLength = 0;
 var scaleDuration = 0;
 var transition;
 var yIndex = 0;
+const videoId = global.location.search.split("=")[1];
+let dictValues, video, categoryList, pointList;
 
 var init = () => {
   settings = {
@@ -720,10 +1316,34 @@ var init = () => {
   };
   settings.middle = settings.width / 2;
   settings.nbrPerHeight = Math.round(settings.height / (settings.iconSize + 5));
+  repository.editingVideo(videoId).then(values => {
+    dictValues = values;
+    video = dictValues['video'];
+    categoryList = dictValues['categories'];
+    pointList = dictValues['points'];
+
+    for (let i = 0; i < video.duration + 10; i += 10) {
+      scaleBar.push({
+        x1: i * 10 + settings.middle,
+        x2: i * 10 + settings.middle,
+        y1: 0,
+        y2: settings.height - 20,
+        value: i
+      });
+    }
+
+    scaleLength = 10 * video.duration;
+    scaleDuration = video.duration;
+    d3__WEBPACK_IMPORTED_MODULE_1__["select"]('svg').append('g').append("line").attr('class', 'origin').attr("x1", settings.middle).attr("x2", settings.middle).attr("y1", 0).attr("y2", settings.height);
+    var t = scale.selectAll("line").data(scaleBar).enter();
+    t.append("line").attr('class', 'scale').attr("x1", d => d.x1).attr("y1", d => d.y1).attr("x2", d => d.x2).attr("y2", d => d.y2);
+    t.append('text').attr('text-rendering', "optimizeLegibility").attr('class', 'scale-text').attr('x', d => d.x1 - 2).attr("y", d => settings.height - 5).text(d => format(d.value));
+    display();
+    electron__WEBPACK_IMPORTED_MODULE_2__["ipcRenderer"].send("timeline:opening");
+  });
 };
 
 init();
-window.addEventListener('resize', init);
 var g = d3__WEBPACK_IMPORTED_MODULE_1__["select"]('g');
 
 const format = value => {
@@ -738,57 +1358,78 @@ const getY = index => {
 };
 
 const display = () => {
-  scale.selectAll(".icon").data(points).enter().append("image").attr("xlink:href", p => catById[p.categoryId].pathDefault).attr("width", settings.iconSize).attr("height", settings.iconSize).attr('x', d => d.currentTime * 10 + settings.middle).attr("y", (d, i) => getY(i));
-  d3__WEBPACK_IMPORTED_MODULE_1__["selectAll"]("image").on("mouseover", function (p) {
-    d3__WEBPACK_IMPORTED_MODULE_1__["select"](this).attr('xlink:href', catById[p.categoryId].pathAlert);
+  let p = scale.selectAll(".icon").data([...pointList.map.values()]);
+  p.enter().append("image").attr('class', 'icon').attr("xlink:href", p => categoryList.getId(p.categoryId).pathDefault).attr("width", settings.iconSize).attr("height", settings.iconSize).attr('x', d => d.currentTime * 10 + settings.middle).attr("y", (d, i) => getY(i)).on("mouseover", function (p) {
+    d3__WEBPACK_IMPORTED_MODULE_1__["select"](this).attr('xlink:href', categoryList.getId(p.categoryId).pathDanger);
     electron__WEBPACK_IMPORTED_MODULE_2__["ipcRenderer"].send('timeline:icon:mouseover', p);
-  });
-  d3__WEBPACK_IMPORTED_MODULE_1__["selectAll"]("image").on("mouseout", function (p) {
-    d3__WEBPACK_IMPORTED_MODULE_1__["select"](this).attr('xlink:href', catById[p.categoryId].pathDefault);
+  }).on("mouseout", function (p) {
+    d3__WEBPACK_IMPORTED_MODULE_1__["select"](this).attr('xlink:href', categoryList.getId(p.categoryId).pathDefault);
     electron__WEBPACK_IMPORTED_MODULE_2__["ipcRenderer"].send('timeline:icon:mouseout', p);
   });
+  p.exit().remove();
 };
 
-ipc.on('editor:video:metadata:response', (event, args) => {
-  video = args.video;
-  points = args.points;
-  catById = args.catById;
-  console.log(catById);
-
-  for (let i = 0; i < video.duration + 10; i += 10) {
-    scaleBar.push({
-      x1: i * 10 + settings.middle,
-      x2: i * 10 + settings.middle,
-      y1: 0,
-      y2: settings.height - 20,
-      value: i
-    });
-  }
-
-  scaleLength = 10 * video.duration;
-  scaleDuration = video.duration;
-  d3__WEBPACK_IMPORTED_MODULE_1__["select"]('svg').append('g').append("line").attr('class', 'origin').attr("x1", settings.middle).attr("x2", settings.middle).attr("y1", 0).attr("y2", settings.height);
-  var t = scale.selectAll("line").data(scaleBar).enter();
-  t.append("line").attr('class', 'scale').attr("x1", d => d.x1).attr("y1", d => d.y1).attr("x2", d => d.x2).attr("y2", d => d.y2);
-  t.append('text').attr('text-rendering', "optimizeLegibility").attr('class', 'scale-text').attr('x', d => d.x1 - 2).attr("y", d => settings.height - 5).text(d => format(d.value));
-  display();
-});
+let isPlaying = false;
 ipc.on('editor:playing', (event, args) => {
+  isPlaying = true;
   const x = video.duration * -100 / 10;
   transition = d3__WEBPACK_IMPORTED_MODULE_1__["select"]('.scale').transition().ease(d3__WEBPACK_IMPORTED_MODULE_1__["easeLinear"]).attr('transform', `translate(${x}, 00)`).duration(video.duration * 1000);
-  console.log(transition);
 });
 ipc.on("editor:stop", _ => {
+  isPlaying = false;
   scale.interrupt();
 });
 ipc.on("editor:oncanplay", (event, args) => {
-  console.log(args);
+  if (isPlaying) {
+    scale.interrupt();
+  }
+
+  const currentTime = args;
+  const x = currentTime * -100 / 10;
+  scale.attr('transform', `translate(${x}, 00)`);
 });
 ipc.on("editor:point:add", (event, args) => {
-  points.push(args);
+  pointList.add(args);
   display();
 });
-electron__WEBPACK_IMPORTED_MODULE_2__["ipcRenderer"].send('editor:video:metadata:request'); //Draw scale
+ipc.on("editor:point:delete", (event, args) => {
+  pointList.remove(args);
+  scale.selectAll(".icon").data([]).exit().remove();
+  display();
+});
+ipc.on("timeline:opened", (event, args) => {
+  isPlaying = !args.paused;
+  const x = video.duration * -100 / 10;
+  transition = d3__WEBPACK_IMPORTED_MODULE_1__["select"]('.scale').transition().ease(d3__WEBPACK_IMPORTED_MODULE_1__["easeLinear"]).attr('transform', `translate(${x}, 00)`).duration(video.duration * 1000);
+  const currentTime = args.currentTime;
+  scale.attr('transform', `translate(${currentTime * -100 / 10}, 00)`);
+
+  if (args.paused) {
+    scale.interrupt();
+  }
+});
+
+/***/ }),
+
+/***/ "collections":
+/*!******************************!*\
+  !*** external "collections" ***!
+  \******************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("collections");
+
+/***/ }),
+
+/***/ "crypto":
+/*!*************************!*\
+  !*** external "crypto" ***!
+  \*************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("crypto");
 
 /***/ }),
 
@@ -811,6 +1452,61 @@ module.exports = require("d3");
 /***/ (function(module, exports) {
 
 module.exports = require("electron");
+
+/***/ }),
+
+/***/ "ffbinaries":
+/*!*****************************!*\
+  !*** external "ffbinaries" ***!
+  \*****************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("ffbinaries");
+
+/***/ }),
+
+/***/ "fs-jetpack":
+/*!*****************************!*\
+  !*** external "fs-jetpack" ***!
+  \*****************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("fs-jetpack");
+
+/***/ }),
+
+/***/ "os":
+/*!*********************!*\
+  !*** external "os" ***!
+  \*********************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("os");
+
+/***/ }),
+
+/***/ "path":
+/*!***********************!*\
+  !*** external "path" ***!
+  \***********************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("path");
+
+/***/ }),
+
+/***/ "uuid":
+/*!***********************!*\
+  !*** external "uuid" ***!
+  \***********************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("uuid");
 
 /***/ })
 

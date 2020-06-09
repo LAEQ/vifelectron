@@ -74,6 +74,7 @@ const initTable = _ => {
     if($(this).hasClass('default')){
       const table = $('#table').DataTable();
       collections.forEach(col => col.default = col.id === data.id ? true : false)
+      repo.save(collections, 'collection.json')
 
       table.clear().rows.add(collections).draw();
       return

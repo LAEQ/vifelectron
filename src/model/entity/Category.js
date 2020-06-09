@@ -1,3 +1,5 @@
+
+
 class Category{
   constructor(obj) {
     this.id = obj.id
@@ -9,10 +11,25 @@ class Category{
   }
 }
 
-class Collection {
-  constructor() {
+class CategoryList{
+  constructor(categories) {
+    this.categories = categories
+    this.mapKey = new Map()
+    this.mapId = new Map()
 
+    categories.forEach(c => {
+      this.mapId.set(c.id, c)
+      this.mapKey.set(c.shortcut, c)
+    })
+  }
+
+  getId(id){
+    return this.mapId.get(id);
+  }
+
+  getKey(key){
+    return this.mapKey.get(key);
   }
 }
 
-export {Category}
+export {Category, CategoryList}

@@ -665,20 +665,18 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(electron__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! fs-jetpack */ "fs-jetpack");
 /* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(fs_jetpack__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! path */ "path");
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(path__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var _helpers_initialize__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./helpers/initialize */ "./src/helpers/initialize.js");
-/* harmony import */ var _model_Repository__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./model/Repository */ "./src/model/Repository.js");
-/* harmony import */ var _model_entity_Point__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./model/entity/Point */ "./src/model/entity/Point.js");
-/* harmony import */ var moment__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! moment */ "moment");
-/* harmony import */ var moment__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(moment__WEBPACK_IMPORTED_MODULE_7__);
-/* harmony import */ var d3__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! d3 */ "d3");
-/* harmony import */ var d3__WEBPACK_IMPORTED_MODULE_8___default = /*#__PURE__*/__webpack_require__.n(d3__WEBPACK_IMPORTED_MODULE_8__);
-/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! jquery */ "jquery");
-/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_9___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_9__);
-/* harmony import */ var bootstrap_slider__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! bootstrap-slider */ "bootstrap-slider");
-/* harmony import */ var bootstrap_slider__WEBPACK_IMPORTED_MODULE_10___default = /*#__PURE__*/__webpack_require__.n(bootstrap_slider__WEBPACK_IMPORTED_MODULE_10__);
-
+/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! uuid */ "uuid");
+/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(uuid__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var _model_Repository__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./model/Repository */ "./src/model/Repository.js");
+/* harmony import */ var _model_entity_Point__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./model/entity/Point */ "./src/model/entity/Point.js");
+/* harmony import */ var moment__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! moment */ "moment");
+/* harmony import */ var moment__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(moment__WEBPACK_IMPORTED_MODULE_6__);
+/* harmony import */ var d3__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! d3 */ "d3");
+/* harmony import */ var d3__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(d3__WEBPACK_IMPORTED_MODULE_7__);
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! jquery */ "jquery");
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_8___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_8__);
+/* harmony import */ var bootstrap_slider__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! bootstrap-slider */ "bootstrap-slider");
+/* harmony import */ var bootstrap_slider__WEBPACK_IMPORTED_MODULE_9___default = /*#__PURE__*/__webpack_require__.n(bootstrap_slider__WEBPACK_IMPORTED_MODULE_9__);
 
 
 
@@ -692,78 +690,70 @@ __webpack_require__.r(__webpack_exports__);
 const app = electron__WEBPACK_IMPORTED_MODULE_1__["remote"].app;
 const ipc = electron__WEBPACK_IMPORTED_MODULE_1__["remote"].ipcMain;
 const appDir = fs_jetpack__WEBPACK_IMPORTED_MODULE_2___default.a.cwd(app.getAppPath());
-const settings = new _helpers_initialize__WEBPACK_IMPORTED_MODULE_4__["default"]();
-const repository = new _model_Repository__WEBPACK_IMPORTED_MODULE_5__["default"]();
+const repository = new _model_Repository__WEBPACK_IMPORTED_MODULE_4__["default"]();
 const manifest = appDir.read("package.json", "json");
 var player = document.querySelector("video");
 var overlay = document.getElementById("overlay");
-var g = d3__WEBPACK_IMPORTED_MODULE_8__["select"]("svg").append("g");
+var g = d3__WEBPACK_IMPORTED_MODULE_7__["select"]("svg").append("g");
 var timer = document.getElementById("timer");
 var catContainer = document.getElementById('container-categories');
-var timeSlider = jquery__WEBPACK_IMPORTED_MODULE_9___default()("#slider").slider({
+var timeSlider = jquery__WEBPACK_IMPORTED_MODULE_8___default()("#slider").slider({
   precision: 2
 });
 const videoId = global.location.search.split("=")[1];
-const video = repository.fetchVideo(videoId);
-let categories = [];
-let categoriesByKey = {};
-let categoriesById = {};
-let img = [];
-let points = [];
-document.getElementById("title").innerHTML = video.name;
-d3__WEBPACK_IMPORTED_MODULE_8__["select"]("g").selectAll(".icon").data([]).enter().append("image").attr("xlink:href", p => categoriesById[p.categoryId].path).attr('class', 'icon').attr("width", 80).attr("height", 80).attr("x", 10).attr("y", 10);
+let video,
+    categoryList,
+    pointList,
+    dictValues,
+    visiblePoints = [];
+repository.editingVideo(videoId).then(values => {
+  dictValues = values; //Set video
 
-player.oncanplay = _ => {
-  electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send('editor:oncanplay', player.currentTime);
-};
+  jquery__WEBPACK_IMPORTED_MODULE_8___default()('#video-spinner').remove();
+  video = values['video'];
+  document.getElementById("title").innerHTML = video.name;
+  player.src = video.path; //Set categories
 
-const durationSort = (a, b) => {
-  return a.currentTime - b.currentTime;
-};
+  categoryList = values['categories'];
+  let catHTML = "";
 
-const pointPromise = repository.fetchPoints(videoId);
-const categoryPromise = repository.fetchCategoryByCollection(video.collection);
-Promise.all([pointPromise, categoryPromise]).then(values => {
-  points = values[0];
-  player.src = video.path; // console.log(points.map(p => p.currentTime))
-  // const test = points.filter( p => p.currentTime < 10 && p.currentTime > 0)
-  // console.log(test.toArray())
-
-  let image = "";
-  categories = values[1];
-  categories.forEach(c => {
-    categoriesByKey[c.shortcut] = c;
-    categoriesById[c.id] = c;
-    c.total = points.filter(p => p.categoryId == c.id).length;
-    image += `<div class="list-group-item">
+  for (let value of categoryList.categories) {
+    value.total = 0;
+    catHTML += `<div class="list-group-item">
                 <div class="d-flex w-100 justify-content-between">
-                  <img class="d-flex mb-1" width="70" src="${c.pathDefault}" id="${c.name}" ></img>
-                  <div class="h1 d-flex align-self-center" id="${c.id}-counter">${c.total}</div>
-                </div>
-                <small>${c.name} - <span class="border border-secondary p-1">${c.shortcut}</span></small>
-             </div>`;
-  });
-  catContainer.innerHTML = image; // refresh()
+              <img class="d-flex mb-1" width="70" src="${value.pathDefault}" id="${value.name}" ></img>
+              <div class="h1 d-flex align-self-center" id="${value.id}-counter">${value.total}</div>
+            </div>
+            <small>${value.name} - <span class="border border-secondary p-1">${value.shortcut}</span></small>
+         </div>`;
+  }
 
-  electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send('editor:video:metadata:response', {
-    video: video,
-    points: points,
-    catById: categoriesById
-  });
+  catContainer.innerHTML = catHTML; //Set points
+
+  pointList = values['points']; //Set total for categories
+
+  for (let value of pointList.map.values()) {
+    categoryList.getId(value.categoryId).total++;
+  }
+
+  refreshCount();
+  refresh();
 }); //Refresh and display icons
 
 const refresh = _ => {
-  console.log('refresh');
   const currentTime = player.currentTime;
-  const pointsToShow = points.filter(p => p.currentTime > currentTime - 10 && p.currentTime < currentTime); // const pointsToShow = points
-
-  let p = d3__WEBPACK_IMPORTED_MODULE_8__["select"]("g").selectAll(".icon").data(pointsToShow.toArray());
-  p.enter().append("image").attr("xlink:href", p => categoriesById[p.categoryId].pathDefault).attr('class', 'icon').attr("width", 80).attr("height", 80).attr("x", p => p.x - 40).attr("y", p => p.y - 40);
+  const pointsToShow = pointList.values().filter(p => p.currentTime > currentTime - 10 && p.currentTime < currentTime);
+  let p = d3__WEBPACK_IMPORTED_MODULE_7__["select"]("g").selectAll(".icon").data(pointsToShow);
+  p.enter().append('g').attr('class', 'icon').attr('transform', p => `translate(${p.x - 40}, ${p.y - 40})`).append('circle').attr('cx', 40).attr('cy', 40).attr('r', 50);
+  d3__WEBPACK_IMPORTED_MODULE_7__["selectAll"]('.icon').append("image").attr("xlink:href", p => categoryList.getId(p.categoryId).pathDefault).attr("width", 80).attr("height", 80);
   p.exit().remove();
+  d3__WEBPACK_IMPORTED_MODULE_7__["selectAll"](".icon").on('click', d => {
+    removePoint(d);
+  });
 };
 
 var timeupdate = event => {
-  const now = moment__WEBPACK_IMPORTED_MODULE_7__["duration"](player.currentTime);
+  const now = moment__WEBPACK_IMPORTED_MODULE_6__["duration"](player.currentTime);
   timer.value = `${now.toISOString('H:m:s')} / ${video.duration.toLocaleString()}`;
   timeSlider.slider('setValue', player.currentTime / video.duration * 100);
   refresh();
@@ -785,13 +775,14 @@ document.getElementById("controls").addEventListener("click", _ => {
   electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send("controls:show-hide");
 });
 document.getElementById("timeline").addEventListener("click", _ => {
-  electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send("editor:timeline", points);
+  electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send("editor:timeline:toogle", videoId);
 });
 document.addEventListener('keydown', ev => {
-  const category = categoriesByKey[ev.key.toUpperCase()];
+  const category = categoryList.getKey(ev.key.toUpperCase());
 
   if (mousePosition && category) {
     const values = {
+      id: Object(uuid__WEBPACK_IMPORTED_MODULE_3__["v4"])(),
       videoId: videoId,
       categoryId: category.id,
       x: mousePosition.layerX,
@@ -799,18 +790,23 @@ document.addEventListener('keydown', ev => {
       currentTime: player.currentTime
     };
     category.total++;
-    refreshCount();
-    addPoint(values);
-    video.total++;
+    refreshCount(); //
+
+    addPoint(values); // video.total++
   }
 }); //Slider
 
-timeSlider.on("slide", ev => {
-  seek(ev.value);
+timeSlider.on("slide", ev => {// console.log("slide", ev.value)
+  // seek(ev.value)
 });
 timeSlider.on('change', ev => {
-  seek(ev.value);
-}); //Video
+  console.log("change", ev.value);
+  seek(ev.value.newValue);
+}); //Player events
+
+player.oncanplay = _ => {
+  electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send('editor:oncanplay', player.currentTime);
+};
 
 player.addEventListener('loadedmetadata', function () {
   if (player.buffered.length === 0) return;
@@ -820,8 +816,9 @@ player.addEventListener('loadedmetadata', function () {
 
 const seek = value => {
   if (value > 0 && value < 100) {
-    const currentTime = Math.floor(value * player.duration / 100);
+    const currentTime = value * player.duration / 100;
     player.currentTime = currentTime;
+    electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send('editor:oncanplay', player.currentTime);
   }
 };
 
@@ -834,37 +831,46 @@ overlay.addEventListener('mousemove', ev => {
 });
 
 const refreshCount = _ => {
-  categories.forEach(c => {
+  categoryList.categories.forEach(c => {
     document.getElementById(`${c.id}-counter`).innerHTML = c.total;
   });
 };
 
 const addPoint = values => {
-  const point = new _model_entity_Point__WEBPACK_IMPORTED_MODULE_6__["Point"](values);
-  points.push(point);
-  repository.savePoints(points, videoId);
+  const point = new _model_entity_Point__WEBPACK_IMPORTED_MODULE_5__["Point"](values);
+  pointList.add(point);
+  pointList.debug();
+  repository.savePoints(pointList.values(), videoId);
   electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send("editor:point:add", point);
+  refresh();
+};
+
+const removePoint = point => {
+  pointList.remove(point);
+  d3__WEBPACK_IMPORTED_MODULE_7__["select"]("g").selectAll(".icon").data([]).exit().remove();
+  categoryList.getId(point.categoryId).total--;
+  refreshCount();
+  repository.savePoints(pointList.values(), videoId);
+  refresh();
+  electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send("editor:point:delete", point);
 }; //IPC
 
 
-ipc.on("point:add", (event, args) => {
-  repository.savePoints(points, videoId);
-});
 ipc.on('controls:rate', (event, args) => {
   player.playbackRate = args;
 });
-ipc.on('editor:video:metadata:request', _ => {
-  electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send('editor:video:metadata:response', {
-    video: video,
-    points: points.toArray(),
-    catById: categoriesById
-  });
-});
 ipc.on('timeline:icon:mouseover', (event, args) => {
-  d3__WEBPACK_IMPORTED_MODULE_8__["select"]("g").selectAll(".icon").filter(p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathDanger);
+  d3__WEBPACK_IMPORTED_MODULE_7__["select"]("g").selectAll(".icon").filter(p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathAlert);
 });
 ipc.on('timeline:icon:mouseout', (event, args) => {
-  d3__WEBPACK_IMPORTED_MODULE_8__["select"]("g").selectAll(".icon").filter(p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].path);
+  d3__WEBPACK_IMPORTED_MODULE_7__["select"]("g").selectAll(".icon").filter(p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathDefault);
+});
+ipc.on("timeline:opening", _ => {
+  const values = {
+    "paused": player.paused,
+    "currentTime": player.currentTime
+  };
+  electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send("timeline:opened", values);
 });
 
 /***/ }),
@@ -1051,13 +1057,11 @@ class Repository {
 
   async fetchVideos() {
     const file = this.settings.getVideoPath();
-    let result = [];
+    let result = new Map();
 
     if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
       await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
-        result = r.map(video => {
-          return new _entity_Video__WEBPACK_IMPORTED_MODULE_6__["Video"](video);
-        });
+        r.forEach(video => result.set(video.id, new _entity_Video__WEBPACK_IMPORTED_MODULE_6__["Video"](video)));
       });
       return result;
     } else {
@@ -1093,20 +1097,59 @@ class Repository {
     }
   }
 
+  async editingVideo(videoId) {
+    const video = this.fetchVideo(videoId);
+    const categories = this.fetchCategories(video.collection.categoryIds);
+    const points = this.fetchPoints(videoId);
+    return Promise.all([categories, points]).then(values => {
+      return {
+        'video': video,
+        'categories': values[0],
+        'points': values[1]
+      };
+    });
+  }
+
+  async fetchCategories(ids) {
+    return fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(this.settings.getCategoryPath(), 'json').then(json => {
+      const categories = [];
+      json.forEach(j => {
+        if (ids.includes(j.id)) {
+          categories.push(this.generateCategory(j));
+        }
+      });
+      return new _entity_Category__WEBPACK_IMPORTED_MODULE_4__["CategoryList"](categories);
+    });
+  }
+
+  generateCategory(obj) {
+    let category = new _entity_Category__WEBPACK_IMPORTED_MODULE_4__["Category"](obj);
+    category.pathDefault = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, obj.pathDefault);
+    category.pathPrimary = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, obj.pathDefault.replace('default', 'primary'));
+    category.pathDanger = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, obj.pathDefault.replace('default', 'danger'));
+    return category;
+  }
+
   fetchVideo(id) {
-    return fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.read(this.settings.getVideoPath(), "json").filter(obj => obj.id === id).map(v => new _entity_Video__WEBPACK_IMPORTED_MODULE_6__["Video"](v))[0];
+    var json = fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.read(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.db, 'video.json'), 'json');
+    let video;
+
+    for (let i = 0; i < json.length; i++) {
+      if (json[i].id === id) {
+        return new _entity_Video__WEBPACK_IMPORTED_MODULE_6__["Video"](json[i]);
+      }
+    }
+
+    if (video === undefined) {
+      //@todo log no video found
+      throw 'No video found.';
+    }
   }
 
   async fetchPoints(videoId) {
-    let result = [];
-    const points = fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.read(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.video, `${videoId}.json`), "json");
-    result = points.map(obj => {
-      return new _entity_Point__WEBPACK_IMPORTED_MODULE_7__["Point"](obj);
+    return fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.video, `${videoId}.json`), "json").then(json => {
+      return new _entity_Point__WEBPACK_IMPORTED_MODULE_7__["PointList"](json);
     });
-    console.log(result); // var r = require("collections/sorted-set")
-    // result = r(result)
-
-    return result;
   }
 
   defaultCollection() {
@@ -1188,7 +1231,6 @@ class Repository {
   async fetchCategoryByCollection(collection) {
     const file = this.settings.getCategoryPath();
     let result = [];
-    console.log(collection);
 
     if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
       await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
@@ -1222,9 +1264,16 @@ class Repository {
 
   deleteVideo(video) {
     this.fetchVideos().then(videoList => {
-      const list = videoList.filter(v => v.id !== video.id);
+      const list = videoList.delet(video.id);
       this.save(list, 'video.json');
       this.deleteFilesIfExist(video.id);
+    });
+  }
+
+  saveVideo(video) {
+    this.fetchVideos().then(videos => {
+      videos.set(video.id, video);
+      this.save(videos, "video.json");
     });
   }
 
@@ -1238,12 +1287,13 @@ class Repository {
 /*!**************************************!*\
   !*** ./src/model/entity/Category.js ***!
   \**************************************/
-/*! exports provided: Category */
+/*! exports provided: Category, CategoryList */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Category", function() { return Category; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "CategoryList", function() { return CategoryList; });
 class Category {
   constructor(obj) {
     this.id = obj.id;
@@ -1256,8 +1306,24 @@ class Category {
 
 }
 
-class Collection {
-  constructor() {}
+class CategoryList {
+  constructor(categories) {
+    this.categories = categories;
+    this.mapKey = new Map();
+    this.mapId = new Map();
+    categories.forEach(c => {
+      this.mapId.set(c.id, c);
+      this.mapKey.set(c.shortcut, c);
+    });
+  }
+
+  getId(id) {
+    return this.mapId.get(id);
+  }
+
+  getKey(key) {
+    return this.mapKey.get(key);
+  }
 
 }
 
@@ -1291,18 +1357,16 @@ class Collection {
 /*!***********************************!*\
   !*** ./src/model/entity/Point.js ***!
   \***********************************/
-/*! exports provided: Point */
+/*! exports provided: Point, PointList */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Point", function() { return Point; });
-/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! uuid */ "uuid");
-/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(uuid__WEBPACK_IMPORTED_MODULE_0__);
-
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "PointList", function() { return PointList; });
 class Point {
   constructor(obj) {
-    this.id = Object(uuid__WEBPACK_IMPORTED_MODULE_0__["v4"])();
+    this.id = obj.id;
     this.videoId = obj.videoId;
     this.categoryId = obj.categoryId;
     this.x = obj.x;
@@ -1311,6 +1375,36 @@ class Point {
   }
 
 }
+
+class PointList {
+  constructor(json) {
+    this.map = new Map();
+    json.forEach(obj => {
+      const pt = new Point(obj);
+      this.map.set(pt.id, pt);
+    });
+  }
+
+  debug() {
+    console.log(Array.from(this.map.keys()));
+  }
+
+  add(point) {
+    this.map.set(point.id, point);
+  }
+
+  remove(point) {
+    console.log(point);
+    this.map.delete(this.map.delete(point.id));
+  }
+
+  values() {
+    return Array.from(this.map.values());
+  }
+
+}
+
+
 
 /***/ }),
 

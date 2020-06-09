@@ -832,13 +832,11 @@ class Repository {
 
   async fetchVideos() {
     const file = this.settings.getVideoPath();
-    let result = [];
+    let result = new Map();
 
     if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
       await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
-        result = r.map(video => {
-          return new _entity_Video__WEBPACK_IMPORTED_MODULE_6__["Video"](video);
-        });
+        r.forEach(video => result.set(video.id, new _entity_Video__WEBPACK_IMPORTED_MODULE_6__["Video"](video)));
       });
       return result;
     } else {
@@ -874,20 +872,59 @@ class Repository {
     }
   }
 
+  async editingVideo(videoId) {
+    const video = this.fetchVideo(videoId);
+    const categories = this.fetchCategories(video.collection.categoryIds);
+    const points = this.fetchPoints(videoId);
+    return Promise.all([categories, points]).then(values => {
+      return {
+        'video': video,
+        'categories': values[0],
+        'points': values[1]
+      };
+    });
+  }
+
+  async fetchCategories(ids) {
+    return fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(this.settings.getCategoryPath(), 'json').then(json => {
+      const categories = [];
+      json.forEach(j => {
+        if (ids.includes(j.id)) {
+          categories.push(this.generateCategory(j));
+        }
+      });
+      return new _entity_Category__WEBPACK_IMPORTED_MODULE_4__["CategoryList"](categories);
+    });
+  }
+
+  generateCategory(obj) {
+    let category = new _entity_Category__WEBPACK_IMPORTED_MODULE_4__["Category"](obj);
+    category.pathDefault = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, obj.pathDefault);
+    category.pathPrimary = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, obj.pathDefault.replace('default', 'primary'));
+    category.pathDanger = path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.icon, obj.pathDefault.replace('default', 'danger'));
+    return category;
+  }
+
   fetchVideo(id) {
-    return fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.read(this.settings.getVideoPath(), "json").filter(obj => obj.id === id).map(v => new _entity_Video__WEBPACK_IMPORTED_MODULE_6__["Video"](v))[0];
+    var json = fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.read(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.db, 'video.json'), 'json');
+    let video;
+
+    for (let i = 0; i < json.length; i++) {
+      if (json[i].id === id) {
+        return new _entity_Video__WEBPACK_IMPORTED_MODULE_6__["Video"](json[i]);
+      }
+    }
+
+    if (video === undefined) {
+      //@todo log no video found
+      throw 'No video found.';
+    }
   }
 
   async fetchPoints(videoId) {
-    let result = [];
-    const points = fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.read(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.video, `${videoId}.json`), "json");
-    result = points.map(obj => {
-      return new _entity_Point__WEBPACK_IMPORTED_MODULE_7__["Point"](obj);
+    return fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(path__WEBPACK_IMPORTED_MODULE_1___default.a.join(this.settings.video, `${videoId}.json`), "json").then(json => {
+      return new _entity_Point__WEBPACK_IMPORTED_MODULE_7__["PointList"](json);
     });
-    console.log(result); // var r = require("collections/sorted-set")
-    // result = r(result)
-
-    return result;
   }
 
   defaultCollection() {
@@ -969,7 +1006,6 @@ class Repository {
   async fetchCategoryByCollection(collection) {
     const file = this.settings.getCategoryPath();
     let result = [];
-    console.log(collection);
 
     if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
       await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
@@ -1003,9 +1039,16 @@ class Repository {
 
   deleteVideo(video) {
     this.fetchVideos().then(videoList => {
-      const list = videoList.filter(v => v.id !== video.id);
+      const list = videoList.delet(video.id);
       this.save(list, 'video.json');
       this.deleteFilesIfExist(video.id);
+    });
+  }
+
+  saveVideo(video) {
+    this.fetchVideos().then(videos => {
+      videos.set(video.id, video);
+      this.save(videos, "video.json");
     });
   }
 
@@ -1019,12 +1062,13 @@ class Repository {
 /*!**************************************!*\
   !*** ./src/model/entity/Category.js ***!
   \**************************************/
-/*! exports provided: Category */
+/*! exports provided: Category, CategoryList */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Category", function() { return Category; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "CategoryList", function() { return CategoryList; });
 class Category {
   constructor(obj) {
     this.id = obj.id;
@@ -1037,8 +1081,24 @@ class Category {
 
 }
 
-class Collection {
-  constructor() {}
+class CategoryList {
+  constructor(categories) {
+    this.categories = categories;
+    this.mapKey = new Map();
+    this.mapId = new Map();
+    categories.forEach(c => {
+      this.mapId.set(c.id, c);
+      this.mapKey.set(c.shortcut, c);
+    });
+  }
+
+  getId(id) {
+    return this.mapId.get(id);
+  }
+
+  getKey(key) {
+    return this.mapKey.get(key);
+  }
 
 }
 
@@ -1072,18 +1132,16 @@ class Collection {
 /*!***********************************!*\
   !*** ./src/model/entity/Point.js ***!
   \***********************************/
-/*! exports provided: Point */
+/*! exports provided: Point, PointList */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Point", function() { return Point; });
-/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! uuid */ "uuid");
-/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(uuid__WEBPACK_IMPORTED_MODULE_0__);
-
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "PointList", function() { return PointList; });
 class Point {
   constructor(obj) {
-    this.id = Object(uuid__WEBPACK_IMPORTED_MODULE_0__["v4"])();
+    this.id = obj.id;
     this.videoId = obj.videoId;
     this.categoryId = obj.categoryId;
     this.x = obj.x;
@@ -1092,6 +1150,36 @@ class Point {
   }
 
 }
+
+class PointList {
+  constructor(json) {
+    this.map = new Map();
+    json.forEach(obj => {
+      const pt = new Point(obj);
+      this.map.set(pt.id, pt);
+    });
+  }
+
+  debug() {
+    console.log(Array.from(this.map.keys()));
+  }
+
+  add(point) {
+    this.map.set(point.id, point);
+  }
+
+  remove(point) {
+    console.log(point);
+    this.map.delete(this.map.delete(point.id));
+  }
+
+  values() {
+    return Array.from(this.map.values());
+  }
+
+}
+
+
 
 /***/ }),
 
@@ -1198,15 +1286,16 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _scss_app_scss__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_scss_app_scss__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! electron */ "electron");
 /* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(electron__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! fs-jetpack */ "fs-jetpack");
-/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(fs_jetpack__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! path */ "path");
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(path__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var _helpers_initialize__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./helpers/initialize */ "./src/helpers/initialize.js");
-/* harmony import */ var _model_Repository__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./model/Repository */ "./src/model/Repository.js");
-/* harmony import */ var fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! fluent-ffmpeg */ "fluent-ffmpeg");
-/* harmony import */ var fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_6__);
-/* harmony import */ var _model_entity_Video__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./model/entity/Video */ "./src/model/entity/Video.js");
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! jquery */ "jquery");
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! fs-jetpack */ "fs-jetpack");
+/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(fs_jetpack__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! path */ "path");
+/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(path__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var _helpers_initialize__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./helpers/initialize */ "./src/helpers/initialize.js");
+/* harmony import */ var _model_Repository__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./model/Repository */ "./src/model/Repository.js");
+/* harmony import */ var fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! fluent-ffmpeg */ "fluent-ffmpeg");
+/* harmony import */ var fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_7__);
 
 
 
@@ -1217,11 +1306,30 @@ __webpack_require__.r(__webpack_exports__);
 
 const app = electron__WEBPACK_IMPORTED_MODULE_1__["remote"].app;
 const ipc = electron__WEBPACK_IMPORTED_MODULE_1__["remote"].ipcMain;
-const appDir = fs_jetpack__WEBPACK_IMPORTED_MODULE_2___default.a.cwd(app.getAppPath());
-const settings = new _helpers_initialize__WEBPACK_IMPORTED_MODULE_4__["default"]();
-const repository = new _model_Repository__WEBPACK_IMPORTED_MODULE_5__["default"]();
+const appDir = fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.cwd(app.getAppPath());
+const settings = new _helpers_initialize__WEBPACK_IMPORTED_MODULE_5__["default"]();
+const repository = new _model_Repository__WEBPACK_IMPORTED_MODULE_6__["default"]();
 const videoId = global.location.search.split("=")[1];
 const video = repository.fetchVideo(videoId);
+let collections;
+repository.fetchCollection().then(c => {
+  collections = c;
+  let html = `<dt class="col-sm-6">Collections</dt>
+                <dd class="col-sm-6">
+                <select class="form-control" id="select-collection">`;
+  collections.forEach(col => {
+    const selected = video.collection.id === col.id ? "selected" : "";
+    html += `<option value="${col.id}" ${selected}>${col.name}</option>`;
+  });
+  html += '</select></dd>';
+  document.getElementById('video-features').innerHTML = html;
+  jquery__WEBPACK_IMPORTED_MODULE_2___default()("#select-collection").change(event => {
+    const id = jquery__WEBPACK_IMPORTED_MODULE_2___default()(event.target).children("option:selected").val();
+    video.collection = collections.find(c => c.id == id);
+    console.log(video.collection);
+    repository.saveVideo(video);
+  });
+});
 document.getElementById('title').innerHTML = video.name;
 var form = {
   'width': document.getElementById('width'),
@@ -1234,18 +1342,18 @@ const showVideoDetail = metadata => {
   const fileContainer = document.getElementById('file-container');
   const audioContainer = document.getElementById('audio-container');
   const videoContainer = document.getElementById('video-container');
-  const imgPath = `${video.id}.png`; //Img
+  const imgPath = `${video.hash}.png`; //Img
 
-  imgContainer.innerHTML = `<img class="img-thumbnail" src="${path__WEBPACK_IMPORTED_MODULE_3___default.a.join(settings.video, imgPath)}" />`;
+  imgContainer.innerHTML = `<img class="img-thumbnail" src="${path__WEBPACK_IMPORTED_MODULE_4___default.a.join(settings.video, imgPath)}" />`;
   let html = ""; //File keys
 
   const fileKeys = ['filename', 'format_long_name', 'duration', 'size', 'bit_rate'];
   const tagKeys = ['major_brand', 'minor_version', 'encoder'];
   fileKeys.forEach(k => {
-    html += `<dt class="col-sm-6">${k}</dt><dd class="col-sm-6">${metadata['format'][k]}</dd>`;
+    html += `<dt class="col-sm-3">${k}</dt><dd class="col-sm-9">${metadata['format'][k]}</dd>`;
   });
   tagKeys.forEach(k => {
-    html += `<dt class="col-sm-6">${k}</dt><dd class="col-sm-6">${metadata['format']['tags'][k]}</dd>`;
+    html += `<dt class="col-sm-3">${k}</dt><dd class="col-sm-9">${metadata['format']['tags'][k]}</dd>`;
   });
   fileContainer.innerHTML = html; //Audio keys:
 
@@ -1272,9 +1380,9 @@ const showVideoDetail = metadata => {
   form.FPS.value = `${videoStream['']}`;
 };
 
-fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_6___default.a.setFfmpegPath(settings.getFfmpegPath());
-fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_6___default.a.setFfprobePath(settings.getFfprobePath());
-fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_6___default.a.ffprobe(video.path, (err, metadata) => {
+fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_7___default.a.setFfmpegPath(settings.getFfmpegPath());
+fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_7___default.a.setFfprobePath(settings.getFfprobePath());
+fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_7___default.a.ffprobe(video.path, (err, metadata) => {
   if (err === null) {
     showVideoDetail(metadata);
     console.log(metadata);
@@ -1286,9 +1394,9 @@ var progressBar = document.getElementById('convertion-progress-bar');
 progressBar.style.width = "0%";
 document.getElementById("convert").addEventListener('click', event => {
   event.preventDefault();
-  const outputPath = path__WEBPACK_IMPORTED_MODULE_3___default.a.join(settings.video, "test.avi");
+  const outputPath = path__WEBPACK_IMPORTED_MODULE_4___default.a.join(settings.video, "test.avi");
   console.log(video.path, outputPath);
-  var proc = new fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_6___default.a({
+  var proc = new fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_7___default.a({
     source: video.path
   }).withAspect('4:3').withSize('640x480').applyAutopadding(true, 'white').saveToFile(outputPath, function (stdout, stderr) {}).on('progress', function (progress) {
     progressBar.style.width = `${progress.percent}%`;
@@ -1362,6 +1470,17 @@ module.exports = require("fluent-ffmpeg");
 /***/ (function(module, exports) {
 
 module.exports = require("fs-jetpack");
+
+/***/ }),
+
+/***/ "jquery":
+/*!*************************!*\
+  !*** external "jquery" ***!
+  \*************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("jquery");
 
 /***/ }),
 
