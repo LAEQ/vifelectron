@@ -2,7 +2,7 @@
   "name": "vifelectron",
   "productName": "Vifeco with electron Boilerplate",
   "description": "Vifeco the way it should be",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": false,
   "author": "David Maignan <davidmaignan@gmail.com>",
   "copyright": "© 2020, INRS / LAEQ.",

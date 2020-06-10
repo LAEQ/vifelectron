@@ -67,12 +67,13 @@ ipcMain.on('category:open', _ => {
   categoryWindow.webContents.openDevTools()
   windows['category'] = categoryWindow
 
-  categoryWindow.onbeforeunload = _ => {
-    windows['category'] = null
+  if (env.name === "development") {
+    categoryWindow.openDevTools();
   }
-})
-ipcMain.on('category:create', (event, category) => {
-  console.log(category)
+
+  categoryWindow.on('closed', _ => {
+    windows['category'] = null
+  })
 })
 
 //Collection
@@ -102,9 +103,13 @@ ipcMain.on('collection:open', _ => {
   collectionWindow.webContents.openDevTools()
   windows['collection'] = collectionWindow
 
-  collectionWindow.onbeforeunload = _ => {
-    windows['collection'] = null
+  if (env.name === "development") {
+    collectionWindow.openDevTools();
   }
+
+  collectionWindow.on('closed', _ => {
+    windows['collection'] = null
+  })
 })
 
 
@@ -119,7 +124,7 @@ ipcMain.on('editor:open', (event, args) => {
   });
 
   editorWindow.setMenu(null);
-  editorWindow.webContents.openDevTools()
+
   editorWindow.loadURL(
     url.format({
       pathname: path.join(__dirname, "editor.html"),
@@ -145,6 +150,10 @@ ipcMain.on('editor:open', (event, args) => {
     }
   })
 
+  if (env.name === "development") {
+    editorWindow.openDevTools();
+  }
+
 })
 ipcMain.on('editor:timeline:toogle', (event, args) => {
   console.log(windows['timeline'])
@@ -165,25 +174,17 @@ ipcMain.on('editor:timeline:toogle', (event, args) => {
         slashes: true,
         query: {videoId: args}
       })
-    ).then( _ => {
+    ).then( _ => {}).catch(err => console.log(err))
 
-    }).catch(err => console.log(err))
-
-    timelineWindow.on('close', _ => {
-      windows['timeline'] = null
-    })
-
-
-    // if (env.name === "development") {
-    timelineWindow.openDevTools();
-    // }
+    if (env.name === "development") {
+      timelineWindow.openDevTools();
+    }
 
     windows['timeline'] = timelineWindow
 
     timelineWindow.on('closed', _ => {
       windows['timeline'] = null
     })
-
   }
 })
 
@@ -234,9 +235,9 @@ ipcMain.on('statistic:video', _ => {
 
   }).catch(err => console.log(err))
 
-  // if (env.name === "development") {
-  statisticVideoWindow.openDevTools();
-  // }
+  if (env.name === "development") {
+    statisticVideoWindow.openDevTools();
+  }
 })
 
 // Controls video editor
@@ -259,6 +260,10 @@ ipcMain.on('controls:show-hide', _ => {
       slashes: true
     })
   ).catch(err => { console.log(err)})
+
+  if (env.name === "development") {
+    controlWindow.openDevTools();
+  }
 })
 
 
@@ -301,9 +306,9 @@ app.on("ready", () => {
 
   }).catch(err => console.log(err))
 
-  // if (env.name === "development") {
+  if (env.name === "development") {
     mainWindow.openDevTools();
-  // }
+  }
 });
 
 //Closing application

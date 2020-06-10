@@ -54,21 +54,6 @@ export class VideoEditor{
     this.container = container
     this.playerWidth = container.offsetWidth
     this.playerHeight = container.offsetHeight
-
-    if(this.pointList.size() === 0){
-      let start = 0
-
-      while(start < this.video.duration){
-        const key = this.categoryList.getRandom()
-        const x = this.randomX()
-        const y = this.randomY()
-        this.addPoint({layerX: x, layerY: y}, key, start)
-
-        start += this.getStep()
-      }
-    } else{
-      console.log("no debug")
-    }
   }
 
   getX(x){
