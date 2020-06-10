@@ -3,7 +3,6 @@ import {Point} from "../model/entity/Point";
 
 export class VideoEditor{
   constructor(values) {
-    console.log(values)
     this.video = values['video'];
     this.categoryList = values['categories'];
     this.pointList = values['points'];
@@ -11,6 +10,26 @@ export class VideoEditor{
     var measuredTime = new Date(null);
     measuredTime.setSeconds(this.video.duration);
     this.durationString = measuredTime.toISOString().substr(11, 8);
+  }
+
+  randomX(){
+    return this.width / this.getStep()
+  }
+
+  randomY(){
+    return this.height / this.getStep()
+  }
+
+  getStep(){
+    const s = [1,3,4,4,5,6,7,8,10,12,15,23]
+
+    for(let i = s.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * i)
+      const temp = s[i]
+      s[i] = s[j]
+      s[j] = temp
+    }
+    return s[0]
   }
 
   isKeyValid(key){
@@ -35,6 +54,21 @@ export class VideoEditor{
     this.container = container
     this.playerWidth = container.offsetWidth
     this.playerHeight = container.offsetHeight
+
+    if(this.pointList.size() === 0){
+      let start = 0
+
+      while(start < this.video.duration){
+        const key = this.categoryList.getRandom()
+        const x = this.randomX()
+        const y = this.randomY()
+        this.addPoint({layerX: x, layerY: y}, key, start)
+
+        start += this.getStep()
+      }
+    } else{
+      console.log("no debug")
+    }
   }
 
   getX(x){
@@ -77,14 +111,12 @@ export class VideoEditor{
       this.pointList.add(point)
       category.total++
 
-      return true;
+      return point
     }
-
-    return false;
   }
 
   visible(time){
-    return this.pointList.values().filter(p => p.currentTime > time - 1 && p.currentTime <= time)
+    return this.pointList.values().filter(p => p.currentTime > time - 10 && p.currentTime <= time)
   }
 
   timer(time){
@@ -101,6 +133,10 @@ export class VideoEditor{
 
   default(id){
     return this.categoryList.getId(id).pathDefault
+  }
+
+  alert(id){
+    return this.categoryList.getId(id).pathDanger
   }
 }
 

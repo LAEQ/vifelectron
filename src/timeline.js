@@ -102,6 +102,8 @@ const display = () => {
   let p = scale.selectAll(".icon")
     .data([...pointList.map.values()])
 
+  console.log(categoryList)
+
   p.enter()
     .append("image")
     .attr('class', 'icon')

@@ -33,14 +33,14 @@ class CategoryList{
   }
 
   getRandom(){
-    for(let i = this.categories.length - 1; i > 0; i--){
+    for(let i = this.keys.length - 1; i > 0; i--){
       const j = Math.floor(Math.random() * i)
-      const temp = this.categories[i]
-      this.categories[i] = this.categories[j]
-      this.categories[j] = temp
+      const temp = this.keys[i]
+      this.keys[i] = this.keys[j]
+      this.keys[j] = temp
     }
 
-    return this.categories[0]
+    return this.keys[0]
   }
 
   increment(id){

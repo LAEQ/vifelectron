@@ -74,6 +74,7 @@ const refresh = _ => {
     .attr('r', 50)
 
   d3.selectAll('.icon').append("image")
+    .attr('class', 'iconSVG')
     .attr("xlink:href", p => editor.default(p.categoryId))
     .attr("width", 80)
     .attr("height", 80)
@@ -128,18 +129,22 @@ timeSlider.on("slide", ev => {
   // seek(ev.value)
 })
 timeSlider.on('change', ev => {
-  console.log("change", ev.value)
   seek(ev.value.newValue)
 })
 
 
+let init = true
+
 //Player events
 player.oncanplay = _ => {
   ipcRenderer.send('editor:oncanplay', player.currentTime)
-  editor.setContainer(document.getElementById('video-container'))
 
-  player.addEventListener("timeupdate", timeupdate)
-  timeupdate()
+  if(init){
+    init = false
+    editor.setContainer(document.getElementById('video-container'))
+    player.addEventListener("timeupdate", timeupdate)
+    timeupdate()
+  }
 }
 
 player.addEventListener('loadedmetadata', function() {
@@ -187,12 +192,12 @@ const deletePoint = (point) => {
 ipc.on('controls:rate', (event, args) => {
   player.playbackRate = args
 })
-// ipc.on('timeline:icon:mouseover', ((event, args) => {
-//   d3.select("g").selectAll(".icon").filter( p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathAlert)
-// }))
-// ipc.on('timeline:icon:mouseout', ((event, args) => {
-//   d3.select("g").selectAll(".icon").filter( p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathDefault)
-// }))
+ipc.on('timeline:icon:mouseover', ((event, args) => {
+  g.selectAll(".iconSVG").filter( p => p.id === args.id).attr("xlink:href", p => editor.alert(p.categoryId))
+}))
+ipc.on('timeline:icon:mouseout', ((event, args) => {
+  g.selectAll(".iconSVG").attr("xlink:href", p => editor.default(p.categoryId))
+}))
 ipc.on("timeline:opening", _ => {
   const values = {
     "paused": player.paused,

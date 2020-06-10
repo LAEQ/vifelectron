@@ -730,7 +730,7 @@ const refresh = _ => {
   console.log('refresh');
   let p = g.selectAll(".icon").data(pointsToShow);
   p.enter().append('g').attr('class', 'icon').attr('transform', p => `translate(${editor.x(p.x) - 40}, ${editor.y(p.y) - 40})`).append('circle').attr('cx', 40).attr('cy', 40).attr('r', 50);
-  d3__WEBPACK_IMPORTED_MODULE_3__["selectAll"]('.icon').append("image").attr("xlink:href", p => editor.default(p.categoryId)).attr("width", 80).attr("height", 80);
+  d3__WEBPACK_IMPORTED_MODULE_3__["selectAll"]('.icon').append("image").attr('class', 'iconSVG').attr("xlink:href", p => editor.default(p.categoryId)).attr("width", 80).attr("height", 80);
   p.exit().remove();
   d3__WEBPACK_IMPORTED_MODULE_3__["selectAll"](".icon").on('click', p => {
     deletePoint(p);
@@ -778,15 +778,19 @@ timeSlider.on("slide", ev => {// console.log("slide", ev.value)
   // seek(ev.value)
 });
 timeSlider.on('change', ev => {
-  console.log("change", ev.value);
   seek(ev.value.newValue);
-}); //Player events
+});
+let init = true; //Player events
 
 player.oncanplay = _ => {
   electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send('editor:oncanplay', player.currentTime);
-  editor.setContainer(document.getElementById('video-container'));
-  player.addEventListener("timeupdate", timeupdate);
-  timeupdate();
+
+  if (init) {
+    init = false;
+    editor.setContainer(document.getElementById('video-container'));
+    player.addEventListener("timeupdate", timeupdate);
+    timeupdate();
+  }
 };
 
 player.addEventListener('loadedmetadata', function () {
@@ -828,13 +832,13 @@ const deletePoint = point => {
 
 ipc.on('controls:rate', (event, args) => {
   player.playbackRate = args;
-}); // ipc.on('timeline:icon:mouseover', ((event, args) => {
-//   d3.select("g").selectAll(".icon").filter( p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathAlert)
-// }))
-// ipc.on('timeline:icon:mouseout', ((event, args) => {
-//   d3.select("g").selectAll(".icon").filter( p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathDefault)
-// }))
-
+});
+ipc.on('timeline:icon:mouseover', (event, args) => {
+  g.selectAll(".iconSVG").filter(p => p.id === args.id).attr("xlink:href", p => editor.alert(p.categoryId));
+});
+ipc.on('timeline:icon:mouseout', (event, args) => {
+  g.selectAll(".iconSVG").attr("xlink:href", p => editor.default(p.categoryId));
+});
 ipc.on("timeline:opening", _ => {
   const values = {
     "paused": player.paused,
@@ -1297,14 +1301,14 @@ class CategoryList {
   }
 
   getRandom() {
-    for (let i = this.categories.length - 1; i > 0; i--) {
+    for (let i = this.keys.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * i);
-      const temp = this.categories[i];
-      this.categories[i] = this.categories[j];
-      this.categories[j] = temp;
+      const temp = this.keys[i];
+      this.keys[i] = this.keys[j];
+      this.keys[j] = temp;
     }
 
-    return this.categories[0];
+    return this.keys[0];
   }
 
   increment(id) {
@@ -1508,7 +1512,6 @@ __webpack_require__.r(__webpack_exports__);
 
 class VideoEditor {
   constructor(values) {
-    console.log(values);
     this.video = values['video'];
     this.categoryList = values['categories'];
     this.pointList = values['points'];
@@ -1516,6 +1519,27 @@ class VideoEditor {
     var measuredTime = new Date(null);
     measuredTime.setSeconds(this.video.duration);
     this.durationString = measuredTime.toISOString().substr(11, 8);
+  }
+
+  randomX() {
+    return this.width / this.getStep();
+  }
+
+  randomY() {
+    return this.height / this.getStep();
+  }
+
+  getStep() {
+    const s = [1, 3, 4, 4, 5, 6, 7, 8, 10, 12, 15, 23];
+
+    for (let i = s.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * i);
+      const temp = s[i];
+      s[i] = s[j];
+      s[j] = temp;
+    }
+
+    return s[0];
   }
 
   isKeyValid(key) {
@@ -1541,6 +1565,23 @@ class VideoEditor {
     this.container = container;
     this.playerWidth = container.offsetWidth;
     this.playerHeight = container.offsetHeight;
+
+    if (this.pointList.size() === 0) {
+      let start = 0;
+
+      while (start < this.video.duration) {
+        const key = this.categoryList.getRandom();
+        const x = this.randomX();
+        const y = this.randomY();
+        this.addPoint({
+          layerX: x,
+          layerY: y
+        }, key, start);
+        start += this.getStep();
+      }
+    } else {
+      console.log("no debug");
+    }
   }
 
   getX(x) {
@@ -1581,14 +1622,12 @@ class VideoEditor {
       });
       this.pointList.add(point);
       category.total++;
-      return true;
+      return point;
     }
-
-    return false;
   }
 
   visible(time) {
-    return this.pointList.values().filter(p => p.currentTime > time - 1 && p.currentTime <= time);
+    return this.pointList.values().filter(p => p.currentTime > time - 10 && p.currentTime <= time);
   }
 
   timer(time) {
@@ -1605,6 +1644,10 @@ class VideoEditor {
 
   default(id) {
     return this.categoryList.getId(id).pathDefault;
+  }
+
+  alert(id) {
+    return this.categoryList.getId(id).pathDanger;
   }
 
 }

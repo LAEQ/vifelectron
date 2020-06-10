@@ -1102,14 +1102,14 @@ class CategoryList {
   }
 
   getRandom() {
-    for (let i = this.categories.length - 1; i > 0; i--) {
+    for (let i = this.keys.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * i);
-      const temp = this.categories[i];
-      this.categories[i] = this.categories[j];
-      this.categories[j] = temp;
+      const temp = this.keys[i];
+      this.keys[i] = this.keys[j];
+      this.keys[j] = temp;
     }
 
-    return this.categories[0];
+    return this.keys[0];
   }
 
   increment(id) {
@@ -1382,6 +1382,7 @@ const getY = index => {
 
 const display = () => {
   let p = scale.selectAll(".icon").data([...pointList.map.values()]);
+  console.log(categoryList);
   p.enter().append("image").attr('class', 'icon').attr("xlink:href", p => categoryList.getId(p.categoryId).pathDefault).attr("width", settings.iconSize).attr("height", settings.iconSize).attr('x', d => d.currentTime * 10 + settings.middle).attr("y", (d, i) => getY(i)).on("mouseover", function (p) {
     d3__WEBPACK_IMPORTED_MODULE_1__["select"](this).attr('xlink:href', categoryList.getId(p.categoryId).pathDanger);
     electron__WEBPACK_IMPORTED_MODULE_2__["ipcRenderer"].send('timeline:icon:mouseover', p);
