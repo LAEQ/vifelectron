@@ -52,7 +52,6 @@ repository.editingVideo(videoId).then(values => {
     if(err === null){
       editor.init(metadata)
       refreshCount()
-      timeupdate()
     } else {
 
     }
@@ -62,6 +61,7 @@ repository.editingVideo(videoId).then(values => {
 
 const refresh = _ => {
   const pointsToShow = editor.visible(player.currentTime)
+  console.log('refresh')
   let p = g.selectAll(".icon").data(pointsToShow);
 
   p.enter()
@@ -84,13 +84,13 @@ const refresh = _ => {
     deletePoint(p)
   })
 }
-
 var timeupdate = () => {
   timer.value = editor.timer(player.currentTime)
   timeSlider.slider('setValue', editor.timerSlider(player.currentTime));
+  refresh()
 }
 
-player.addEventListener("timeupdate", timeupdate)
+// player.addEventListener("timeupdate", timeupdate)
 player.addEventListener('playing', _ => {
   ipcRenderer.send("editor:playing", player.currentTime)
 })
@@ -138,8 +138,10 @@ player.oncanplay = _ => {
   ipcRenderer.send('editor:oncanplay', player.currentTime)
   editor.setContainer(document.getElementById('video-container'))
 
-  refresh()
+  player.addEventListener("timeupdate", timeupdate)
+  timeupdate()
 }
+
 player.addEventListener('loadedmetadata', function() {
   if (player.buffered.length === 0) return;
 
@@ -185,12 +187,12 @@ const deletePoint = (point) => {
 ipc.on('controls:rate', (event, args) => {
   player.playbackRate = args
 })
-ipc.on('timeline:icon:mouseover', ((event, args) => {
-  d3.select("g").selectAll(".icon").filter( p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathAlert)
-}))
-ipc.on('timeline:icon:mouseout', ((event, args) => {
-  d3.select("g").selectAll(".icon").filter( p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathDefault)
-}))
+// ipc.on('timeline:icon:mouseover', ((event, args) => {
+//   d3.select("g").selectAll(".icon").filter( p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathAlert)
+// }))
+// ipc.on('timeline:icon:mouseout', ((event, args) => {
+//   d3.select("g").selectAll(".icon").filter( p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathDefault)
+// }))
 ipc.on("timeline:opening", _ => {
   const values = {
     "paused": player.paused,

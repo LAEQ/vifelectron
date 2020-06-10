@@ -721,13 +721,13 @@ repository.editingVideo(videoId).then(values => {
     if (err === null) {
       editor.init(metadata);
       refreshCount();
-      timeupdate();
     } else {}
   });
 });
 
 const refresh = _ => {
   const pointsToShow = editor.visible(player.currentTime);
+  console.log('refresh');
   let p = g.selectAll(".icon").data(pointsToShow);
   p.enter().append('g').attr('class', 'icon').attr('transform', p => `translate(${editor.x(p.x) - 40}, ${editor.y(p.y) - 40})`).append('circle').attr('cx', 40).attr('cy', 40).attr('r', 50);
   d3__WEBPACK_IMPORTED_MODULE_3__["selectAll"]('.icon').append("image").attr("xlink:href", p => editor.default(p.categoryId)).attr("width", 80).attr("height", 80);
@@ -740,9 +740,10 @@ const refresh = _ => {
 var timeupdate = () => {
   timer.value = editor.timer(player.currentTime);
   timeSlider.slider('setValue', editor.timerSlider(player.currentTime));
-};
+  refresh();
+}; // player.addEventListener("timeupdate", timeupdate)
 
-player.addEventListener("timeupdate", timeupdate);
+
 player.addEventListener('playing', _ => {
   electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send("editor:playing", player.currentTime);
 }); //Video controls
@@ -784,7 +785,8 @@ timeSlider.on('change', ev => {
 player.oncanplay = _ => {
   electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send('editor:oncanplay', player.currentTime);
   editor.setContainer(document.getElementById('video-container'));
-  refresh();
+  player.addEventListener("timeupdate", timeupdate);
+  timeupdate();
 };
 
 player.addEventListener('loadedmetadata', function () {
@@ -826,13 +828,13 @@ const deletePoint = point => {
 
 ipc.on('controls:rate', (event, args) => {
   player.playbackRate = args;
-});
-ipc.on('timeline:icon:mouseover', (event, args) => {
-  d3__WEBPACK_IMPORTED_MODULE_3__["select"]("g").selectAll(".icon").filter(p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathAlert);
-});
-ipc.on('timeline:icon:mouseout', (event, args) => {
-  d3__WEBPACK_IMPORTED_MODULE_3__["select"]("g").selectAll(".icon").filter(p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathDefault);
-});
+}); // ipc.on('timeline:icon:mouseover', ((event, args) => {
+//   d3.select("g").selectAll(".icon").filter( p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathAlert)
+// }))
+// ipc.on('timeline:icon:mouseout', ((event, args) => {
+//   d3.select("g").selectAll(".icon").filter( p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathDefault)
+// }))
+
 ipc.on("timeline:opening", _ => {
   const values = {
     "paused": player.paused,
@@ -1579,12 +1581,14 @@ class VideoEditor {
       });
       this.pointList.add(point);
       category.total++;
-      return point;
+      return true;
     }
+
+    return false;
   }
 
   visible(time) {
-    return this.pointList.values().filter(p => p.currentTime > time - 10 && p.currentTime <= time);
+    return this.pointList.values().filter(p => p.currentTime > time - 1 && p.currentTime <= time);
   }
 
   timer(time) {

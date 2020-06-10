@@ -84,7 +84,7 @@ export class VideoEditor{
   }
 
   visible(time){
-    return this.pointList.values().filter(p => p.currentTime > time - 10 && p.currentTime <= time)
+    return this.pointList.values().filter(p => p.currentTime > time - 1 && p.currentTime <= time)
   }
 
   timer(time){
