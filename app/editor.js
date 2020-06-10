@@ -663,18 +663,17 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _scss_app_scss__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_scss_app_scss__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! electron */ "electron");
 /* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(electron__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! fs-jetpack */ "fs-jetpack");
-/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(fs_jetpack__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! uuid */ "uuid");
-/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(uuid__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var _model_Repository__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./model/Repository */ "./src/model/Repository.js");
-/* harmony import */ var _model_entity_Point__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./model/entity/Point */ "./src/model/entity/Point.js");
-/* harmony import */ var d3__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! d3 */ "d3");
-/* harmony import */ var d3__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(d3__WEBPACK_IMPORTED_MODULE_6__);
-/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! jquery */ "jquery");
-/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_7__);
-/* harmony import */ var bootstrap_slider__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! bootstrap-slider */ "bootstrap-slider");
-/* harmony import */ var bootstrap_slider__WEBPACK_IMPORTED_MODULE_8___default = /*#__PURE__*/__webpack_require__.n(bootstrap_slider__WEBPACK_IMPORTED_MODULE_8__);
+/* harmony import */ var _model_Repository__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./model/Repository */ "./src/model/Repository.js");
+/* harmony import */ var d3__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! d3 */ "d3");
+/* harmony import */ var d3__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(d3__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! jquery */ "jquery");
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var bootstrap_slider__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! bootstrap-slider */ "bootstrap-slider");
+/* harmony import */ var bootstrap_slider__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(bootstrap_slider__WEBPACK_IMPORTED_MODULE_5__);
+/* harmony import */ var _services_videoeditor__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./services/videoeditor */ "./src/services/videoeditor.js");
+/* harmony import */ var fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! fluent-ffmpeg */ "fluent-ffmpeg");
+/* harmony import */ var fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_7__);
+/* harmony import */ var _helpers_initialize__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./helpers/initialize */ "./src/helpers/initialize.js");
 
 
 
@@ -684,42 +683,27 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const app = electron__WEBPACK_IMPORTED_MODULE_1__["remote"].app;
 const ipc = electron__WEBPACK_IMPORTED_MODULE_1__["remote"].ipcMain;
-const appDir = fs_jetpack__WEBPACK_IMPORTED_MODULE_2___default.a.cwd(app.getAppPath());
-const repository = new _model_Repository__WEBPACK_IMPORTED_MODULE_4__["default"]();
-const manifest = appDir.read("package.json", "json");
+const repository = new _model_Repository__WEBPACK_IMPORTED_MODULE_2__["default"]();
+const settings = new _helpers_initialize__WEBPACK_IMPORTED_MODULE_8__["default"]();
 var player = document.querySelector("video");
 var overlay = document.getElementById("overlay");
-var g = d3__WEBPACK_IMPORTED_MODULE_6__["select"]("svg").append("g");
 var timer = document.getElementById("timer");
 var catContainer = document.getElementById('container-categories');
-var timeSlider = jquery__WEBPACK_IMPORTED_MODULE_7___default()("#slider").slider({
+var timeSlider = jquery__WEBPACK_IMPORTED_MODULE_4___default()("#slider").slider({
   precision: 2
 });
+var g = d3__WEBPACK_IMPORTED_MODULE_3__["select"]("svg").append("g");
 const videoId = global.location.search.split("=")[1];
-let video,
-    categoryList,
-    pointList,
-    dictValues,
-    visiblePoints = [],
-    durationString;
+let editor, mousePosition;
 repository.editingVideo(videoId).then(values => {
-  dictValues = values; //Set video
-
-  jquery__WEBPACK_IMPORTED_MODULE_7___default()('#video-spinner').remove();
-  video = values['video'];
-  var measuredTime = new Date(null);
-  measuredTime.setSeconds(video.duration); // specify value of SECONDS
-
-  durationString = measuredTime.toISOString().substr(11, 8);
-  document.getElementById("title").innerHTML = video.name;
-  player.src = video.path; //Set categories
-
-  categoryList = values['categories'];
+  editor = new _services_videoeditor__WEBPACK_IMPORTED_MODULE_6__["VideoEditor"](values);
+  jquery__WEBPACK_IMPORTED_MODULE_4___default()('#video-spinner').remove();
+  document.getElementById("title").innerHTML = editor.video.name;
+  player.src = editor.video.path;
   let catHTML = "";
 
-  for (let value of categoryList.categories) {
+  for (let value of editor.categoryList.categories) {
     value.total = 0;
     catHTML += `<div class="list-group-item">
                 <div class="d-flex w-100 justify-content-between">
@@ -730,39 +714,32 @@ repository.editingVideo(videoId).then(values => {
          </div>`;
   }
 
-  catContainer.innerHTML = catHTML; //Set points
-
-  pointList = values['points']; //Set total for categories
-
-  for (let value of pointList.map.values()) {
-    categoryList.getId(value.categoryId).total++;
-  }
-
-  refreshCount();
-  refresh();
-  timeupdate();
-}); //Refresh and display icons
+  catContainer.innerHTML = catHTML;
+  fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_7___default.a.setFfmpegPath(settings.getFfmpegPath());
+  fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_7___default.a.setFfprobePath(settings.getFfprobePath());
+  fluent_ffmpeg__WEBPACK_IMPORTED_MODULE_7___default.a.ffprobe(editor.video.path, (err, metadata) => {
+    if (err === null) {
+      editor.init(metadata);
+      refreshCount();
+      timeupdate();
+    } else {}
+  });
+});
 
 const refresh = _ => {
-  const currentTime = player.currentTime;
-  const pointsToShow = pointList.values().filter(p => p.currentTime > currentTime - 10 && p.currentTime < currentTime);
-  let p = d3__WEBPACK_IMPORTED_MODULE_6__["select"]("g").selectAll(".icon").data(pointsToShow);
-  p.enter().append('g').attr('class', 'icon').attr('transform', p => `translate(${p.x - 40}, ${p.y - 40})`).append('circle').attr('cx', 40).attr('cy', 40).attr('r', 50);
-  d3__WEBPACK_IMPORTED_MODULE_6__["selectAll"]('.icon').append("image").attr("xlink:href", p => categoryList.getId(p.categoryId).pathDefault).attr("width", 80).attr("height", 80);
+  const pointsToShow = editor.visible(player.currentTime);
+  let p = g.selectAll(".icon").data(pointsToShow);
+  p.enter().append('g').attr('class', 'icon').attr('transform', p => `translate(${editor.x(p.x) - 40}, ${editor.y(p.y) - 40})`).append('circle').attr('cx', 40).attr('cy', 40).attr('r', 50);
+  d3__WEBPACK_IMPORTED_MODULE_3__["selectAll"]('.icon').append("image").attr("xlink:href", p => editor.default(p.categoryId)).attr("width", 80).attr("height", 80);
   p.exit().remove();
-  d3__WEBPACK_IMPORTED_MODULE_6__["selectAll"](".icon").on('click', d => {
-    removePoint(d);
+  d3__WEBPACK_IMPORTED_MODULE_3__["selectAll"](".icon").on('click', p => {
+    deletePoint(p);
   });
 };
 
 var timeupdate = () => {
-  var measuredTime = new Date(null);
-  measuredTime.setSeconds(player.currentTime); // specify value of SECONDS
-
-  var MHSTime = measuredTime.toISOString().substr(11, 8);
-  timer.value = `${MHSTime} / ${durationString}`;
-  timeSlider.slider('setValue', player.currentTime / video.duration * 100);
-  refresh();
+  timer.value = editor.timer(player.currentTime);
+  timeSlider.slider('setValue', editor.timerSlider(player.currentTime));
 };
 
 player.addEventListener("timeupdate", timeupdate);
@@ -784,21 +761,15 @@ document.getElementById("timeline").addEventListener("click", _ => {
   electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send("editor:timeline:toogle", videoId);
 });
 document.addEventListener('keydown', ev => {
-  const category = categoryList.getKey(ev.key.toUpperCase());
+  if (mousePosition) {
+    const point = editor.addPoint(mousePosition, ev.key.toUpperCase(), player.currentTime);
 
-  if (mousePosition && category) {
-    const values = {
-      id: Object(uuid__WEBPACK_IMPORTED_MODULE_3__["v4"])(),
-      videoId: videoId,
-      categoryId: category.id,
-      x: mousePosition.layerX,
-      y: mousePosition.layerY,
-      currentTime: player.currentTime
-    };
-    category.total++;
-    refreshCount(); //
-
-    addPoint(values); // video.total++
+    if (point !== undefined) {
+      repository.savePoints(editor.pointList.values(), videoId);
+      electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send('editor:point:add', point);
+      refresh();
+      refreshCount();
+    }
   }
 }); //Slider
 
@@ -812,12 +783,21 @@ timeSlider.on('change', ev => {
 
 player.oncanplay = _ => {
   electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send('editor:oncanplay', player.currentTime);
+  editor.setContainer(document.getElementById('video-container'));
+  refresh();
 };
 
 player.addEventListener('loadedmetadata', function () {
   if (player.buffered.length === 0) return;
   var bufferedSeconds = player.buffered.end(0) - player.buffered.start(0);
   console.log(bufferedSeconds + ' seconds of video are ready to play!');
+}); //Overlay events
+
+overlay.addEventListener('mouseout', _ => {
+  mousePosition = undefined;
+});
+overlay.addEventListener('mousemove', ev => {
+  mousePosition = ev;
 });
 
 const seek = value => {
@@ -828,47 +808,30 @@ const seek = value => {
   }
 };
 
-var mousePosition;
-overlay.addEventListener('mouseout', _ => {
-  mousePosition = undefined;
-});
-overlay.addEventListener('mousemove', ev => {
-  mousePosition = ev;
-});
-
 const refreshCount = _ => {
-  categoryList.categories.forEach(c => {
+  editor.categoryList.categories.forEach(c => {
     document.getElementById(`${c.id}-counter`).innerHTML = c.total;
   });
 };
 
-const addPoint = values => {
-  const point = new _model_entity_Point__WEBPACK_IMPORTED_MODULE_5__["Point"](values);
-  pointList.add(point);
-  repository.savePoints(pointList.values(), videoId);
-  electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send("editor:point:add", point);
-  refresh();
-};
-
-const removePoint = point => {
-  pointList.remove(point);
-  d3__WEBPACK_IMPORTED_MODULE_6__["select"]("g").selectAll(".icon").data([]).exit().remove();
-  categoryList.getId(point.categoryId).total--;
-  refreshCount();
-  repository.savePoints(pointList.values(), videoId);
-  refresh();
-  electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send("editor:point:delete", point);
-}; //IPC
+const deletePoint = point => {
+  if (editor.deletePoint(point)) {
+    g.selectAll(".icon").data([]).exit().remove();
+    refreshCount();
+    refresh();
+    electron__WEBPACK_IMPORTED_MODULE_1__["ipcRenderer"].send("editor:point:delete", point);
+  }
+}; //Listen events
 
 
 ipc.on('controls:rate', (event, args) => {
   player.playbackRate = args;
 });
 ipc.on('timeline:icon:mouseover', (event, args) => {
-  d3__WEBPACK_IMPORTED_MODULE_6__["select"]("g").selectAll(".icon").filter(p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathAlert);
+  d3__WEBPACK_IMPORTED_MODULE_3__["select"]("g").selectAll(".icon").filter(p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathAlert);
 });
 ipc.on('timeline:icon:mouseout', (event, args) => {
-  d3__WEBPACK_IMPORTED_MODULE_6__["select"]("g").selectAll(".icon").filter(p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathDefault);
+  d3__WEBPACK_IMPORTED_MODULE_3__["select"]("g").selectAll(".icon").filter(p => p.id === args.id).attr("xlink:href", p => categoriesById[p.categoryId].pathDefault);
 });
 ipc.on("timeline:opening", _ => {
   const values = {
@@ -1314,6 +1277,7 @@ class Category {
 class CategoryList {
   constructor(categories) {
     this.categories = categories;
+    this.keys = categories.map(c => c.shortcut);
     this.mapKey = new Map();
     this.mapId = new Map();
     categories.forEach(c => {
@@ -1328,6 +1292,25 @@ class CategoryList {
 
   getKey(key) {
     return this.mapKey.get(key);
+  }
+
+  getRandom() {
+    for (let i = this.categories.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * i);
+      const temp = this.categories[i];
+      this.categories[i] = this.categories[j];
+      this.categories[j] = temp;
+    }
+
+    return this.categories[0];
+  }
+
+  increment(id) {
+    this.mapId.get(id).total++;
+  }
+
+  decrement(id) {
+    this.mapId.get(id).total--;
   }
 
 }
@@ -1399,12 +1382,15 @@ class PointList {
   }
 
   remove(point) {
-    console.log(point);
-    this.map.delete(this.map.delete(point.id));
+    return this.map.delete(point.id);
   }
 
   values() {
     return Array.from(this.map.values());
+  }
+
+  size() {
+    return this.map.size;
   }
 
 }
@@ -1503,6 +1489,124 @@ module.exports = content.locals || {};
 
 /***/ }),
 
+/***/ "./src/services/videoeditor.js":
+/*!*************************************!*\
+  !*** ./src/services/videoeditor.js ***!
+  \*************************************/
+/*! exports provided: VideoEditor */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "VideoEditor", function() { return VideoEditor; });
+/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! uuid */ "uuid");
+/* harmony import */ var uuid__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(uuid__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _model_entity_Point__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../model/entity/Point */ "./src/model/entity/Point.js");
+
+
+class VideoEditor {
+  constructor(values) {
+    console.log(values);
+    this.video = values['video'];
+    this.categoryList = values['categories'];
+    this.pointList = values['points'];
+    this.metadata = undefined;
+    var measuredTime = new Date(null);
+    measuredTime.setSeconds(this.video.duration);
+    this.durationString = measuredTime.toISOString().substr(11, 8);
+  }
+
+  isKeyValid(key) {
+    return this.categoryList.keys.includes(key);
+  }
+
+  init(meta) {
+    this.metadata = meta;
+
+    for (let value of this.pointList.map.values()) {
+      this.categoryList.increment(value.categoryId);
+    } //Read video metadata
+
+
+    const index = this.metadata['streams'][0]['codec_type'] === "audio" ? 0 : 1;
+    this.audioStream = this.metadata['streams'][index];
+    this.videoStream = index === 0 ? this.metadata['streams'][1] : this.metadata['streams'][0];
+    this.width = this.videoStream['coded_width'];
+    this.height = this.videoStream['coded_height'];
+  }
+
+  setContainer(container) {
+    this.container = container;
+    this.playerWidth = container.offsetWidth;
+    this.playerHeight = container.offsetHeight;
+  }
+
+  getX(x) {
+    return x.layerX * this.width / this.playerWidth;
+  }
+
+  getY(y) {
+    return y.layerY * this.height / this.playerHeight;
+  }
+
+  x(x) {
+    return x * this.playerWidth / this.width;
+  }
+
+  y(y) {
+    return y * this.playerHeight / this.height;
+  }
+
+  deletePoint(point) {
+    if (this.pointList.remove(point)) {
+      this.categoryList.decrement(point.categoryId);
+      return true;
+    }
+
+    return false;
+  }
+
+  addPoint(position, key, time) {
+    if (this.categoryList.keys.includes(key)) {
+      const category = this.categoryList.mapKey.get(key);
+      const point = new _model_entity_Point__WEBPACK_IMPORTED_MODULE_1__["Point"]({
+        id: Object(uuid__WEBPACK_IMPORTED_MODULE_0__["v4"])(),
+        videoId: this.video.id,
+        categoryId: category.id,
+        x: this.getX(position),
+        y: this.getY(position),
+        currentTime: time
+      });
+      this.pointList.add(point);
+      category.total++;
+      return point;
+    }
+  }
+
+  visible(time) {
+    return this.pointList.values().filter(p => p.currentTime > time - 10 && p.currentTime <= time);
+  }
+
+  timer(time) {
+    const measuredTime = new Date(null);
+    measuredTime.setSeconds(time); // specify value of SECONDS
+
+    const MHSTime = measuredTime.toISOString().substr(11, 8);
+    return `${MHSTime} / ${this.durationString}`;
+  }
+
+  timerSlider(time) {
+    return time / this.video.duration * 100;
+  }
+
+  default(id) {
+    return this.categoryList.getId(id).pathDefault;
+  }
+
+}
+
+/***/ }),
+
 /***/ "bootstrap-slider":
 /*!***********************************!*\
   !*** external "bootstrap-slider" ***!
@@ -1566,6 +1670,17 @@ module.exports = require("electron");
 /***/ (function(module, exports) {
 
 module.exports = require("ffbinaries");
+
+/***/ }),
+
+/***/ "fluent-ffmpeg":
+/*!********************************!*\
+  !*** external "fluent-ffmpeg" ***!
+  \********************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("fluent-ffmpeg");
 
 /***/ }),
 

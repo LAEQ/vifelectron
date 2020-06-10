@@ -1218,6 +1218,7 @@ class Category {
 class CategoryList {
   constructor(categories) {
     this.categories = categories;
+    this.keys = categories.map(c => c.shortcut);
     this.mapKey = new Map();
     this.mapId = new Map();
     categories.forEach(c => {
@@ -1232,6 +1233,25 @@ class CategoryList {
 
   getKey(key) {
     return this.mapKey.get(key);
+  }
+
+  getRandom() {
+    for (let i = this.categories.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * i);
+      const temp = this.categories[i];
+      this.categories[i] = this.categories[j];
+      this.categories[j] = temp;
+    }
+
+    return this.categories[0];
+  }
+
+  increment(id) {
+    this.mapId.get(id).total++;
+  }
+
+  decrement(id) {
+    this.mapId.get(id).total--;
   }
 
 }
@@ -1303,12 +1323,15 @@ class PointList {
   }
 
   remove(point) {
-    console.log(point);
-    this.map.delete(this.map.delete(point.id));
+    return this.map.delete(point.id);
   }
 
   values() {
     return Array.from(this.map.values());
+  }
+
+  size() {
+    return this.map.size;
   }
 
 }

@@ -28,12 +28,15 @@ class PointList{
   }
 
   remove(point){
-    console.log(point)
-    this.map.delete(this.map.delete(point.id))
+    return this.map.delete(point.id)
   }
 
   values(){
     return Array.from(this.map.values())
+  }
+
+  size(){
+    return this.map.size
   }
 }
 

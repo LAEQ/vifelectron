@@ -36,7 +36,6 @@ repository.fetchCollection().then(c => {
   $("#select-collection").change((event) => {
     const id = $(event.target).children("option:selected").val();
     video.collection = collections.find(c => c.id == id)
-    console.log(video.collection)
     repository.saveVideo(video)
   })
 })

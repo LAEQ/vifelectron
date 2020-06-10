@@ -143,12 +143,10 @@ ipc.on("editor:oncanplay", ((event, args) => {
   const currentTime = args
   const x = currentTime * -100 / 10
   scale.attr('transform', `translate(${x}, 00)`)
-
-
-
 }))
 ipc.on("editor:point:add", ((event, args) => {
   pointList.add(args)
+  console.log(args)
   display()
 }))
 ipc.on("editor:point:delete", (event, args) => {
