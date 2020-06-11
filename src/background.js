@@ -159,8 +159,8 @@ ipcMain.on('editor:timeline:toogle', (event, args) => {
   console.log(windows['timeline'])
   if(! windows["timeline"]){
     let timelineWindow = createWindow('timeline', {
-      width: 1000,
-      height: 100,
+      width: 980,
+      height: 230,
       webPreferences: {
         nodeIntegration: true
       }
@@ -212,31 +212,69 @@ ipcMain.on('video:tool', (event, args) => {
   })
 })
 
-
 //Statistic
 ipcMain.on('statistic:video', _ => {
-  const statisticVideoWindow = createWindow("statisticVideo", {
+  if(windows['statistic'] === undefined){
+    const statisticVideoWindow = createWindow("statisticVideo", {
+      width: 1000,
+      height: 600,
+      webPreferences: {
+        nodeIntegration: true
+      }
+    })
+    windows['statisticVideo'] = statisticVideoWindow;
+    statisticVideoWindow.setMenu(null)
+
+    statisticVideoWindow.loadURL(
+      url.format({
+        pathname: path.join(__dirname, "statistic_video.html"),
+        protocol: "file:",
+        slashes: true
+      })
+    ).then( _ => {
+
+    }).catch(err => console.log(err))
+
+    windows['statistic'] = statisticVideoWindow
+
+    if (env.name === "development") {
+      statisticVideoWindow.openDevTools();
+    }
+
+    statisticVideoWindow.on('close', _ =>{
+      windows['statistic'] = undefined
+    })
+  }
+})
+ipcMain.on("statistic:visualize", (event, args) => {
+  const name = `visualize-${args}`
+  let visualizeWindow = createWindow("visualizeStatistic", {
     width: 1000,
     height: 600,
     webPreferences: {
       nodeIntegration: true
     }
   })
-  windows['statisticVideo'] = statisticVideoWindow;
-  statisticVideoWindow.setMenu(null)
 
-  statisticVideoWindow.loadURL(
+  visualizeWindow.loadURL(
     url.format({
-      pathname: path.join(__dirname, "statistic_video.html"),
-      protocol: "file:",
-      slashes: true
+      pathname: path.join(__dirname, "statistic_visualize.html"),
+      protocol: "file",
+      slashes: true,
+      query: {name: args}
     })
-  ).then( _ => {
+  ).catch(err => {
+    console.log(err)
+  })
 
-  }).catch(err => console.log(err))
+  windows[name] = visualizeWindow
+
+  visualizeWindow.on('close', _ => {
+    windows[name] = undefined
+  })
 
   if (env.name === "development") {
-    statisticVideoWindow.openDevTools();
+    visualizeWindow.openDevTools();
   }
 })
 
@@ -266,16 +304,13 @@ ipcMain.on('controls:show-hide', _ => {
   }
 })
 
-
 //Logging
 ipcMain.on("log:info", ((event, args) => {
   logger.info(args)
 }))
-
 ipcMain.on("log:warning", ((event, args) => {
   logger.warning(args)
 }))
-
 ipcMain.on("log:error", ((event, args) => {
   logger.error(args)
 }))

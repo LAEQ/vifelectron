@@ -1,3 +1,5 @@
+import {VertexPoint} from "../../services/statistic";
+
 class Point{
   constructor(obj) {
     this.id = obj.id
@@ -37,6 +39,10 @@ class PointList{
 
   size(){
     return this.map.size
+  }
+
+  vertices(){
+    return this.values().map(p => new VertexPoint(p))
   }
 }
 

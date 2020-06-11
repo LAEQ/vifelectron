@@ -270,6 +270,19 @@ class Repository {
         this.save(videos, "video.json")
     })
   }
+
+  async fetchVideoStatistic(hash) {
+    const json = jetpack.read(path.join(this.settings.db, 'video.json'), "json")
+    const videoIds = json.filter(j => j.hash === hash).map( j => j.id)
+    const video = this.fetchVideo(videoIds[0])
+    let promises = [this.fetchCategories(video.collection.categoryIds)]
+    promises = promises.concat(videoIds.map(id => this.fetchPoints(id)))
+    return {
+        "video": video,
+        "videoIds": videoIds,
+        "promises": Promise.all(promises)
+    }
+  }
 }
 
 export default Repository;

@@ -13,7 +13,8 @@ module.exports = env => {
       tool: "./src/tool.js",
       controls: "./src/javascript/controls.js",
       timeline: "./src/timeline.js",
-      statistic_video: "./src/statistic_video.js"
+      statistic_video: "./src/statistic_video.js",
+      visualize: "./src/visualize.js"
     },
     output: {
       filename: "[name].js",
