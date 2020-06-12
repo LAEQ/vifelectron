@@ -156,7 +156,9 @@ export class Statistic{
       const graph = new Graph(vertices);
       const tarjan = new Tarjan(graph);
 
-      return tarjan.run();
+      this.scc = tarjan.run();
+
+      return this.scc
   }
 
   groupByVideo(array) {
@@ -187,11 +189,10 @@ export class Statistic{
     return result
   }
 
-  statByCategory(categoryIds){
-    this.scc = this.tarjan()
+  statByCategory(){
 
     let result = new Map()
-    categoryIds.forEach(id => {
+    this.catIds.forEach(id => {
       result.set(id, this.ids.reduce((result, id) => {
         result[id] = 0
         return result

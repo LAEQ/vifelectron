@@ -1196,8 +1196,8 @@ class Repository {
     const collection = new _entity_Collection__WEBPACK_IMPORTED_MODULE_5__["Collection"]({
       id: Object(uuid__WEBPACK_IMPORTED_MODULE_2__["v4"])(),
       name: form[0].value,
-      default: form[1].checked,
-      categoryIds: form[2].value.split(";").sort()
+      default: false,
+      categoryIds: form[1].value.split(";").sort()
     });
     return collection;
   }
@@ -1636,7 +1636,9 @@ Tarjan.prototype = {
   }
 };
 class Statistic {
-  constructor(pointList1, pointList2) {
+  constructor(ids, catIds, pointList1, pointList2) {
+    this.ids = ids;
+    this.catIds = catIds;
     this.p1 = pointList1;
     this.p2 = pointList2;
   }
@@ -1675,18 +1677,63 @@ class Statistic {
     return result;
   }
 
-  tarjan() {
-    if (this.v1 && this.v2) {
-      const vertices = this.v1.concat(this.v2);
-      const graph = new Graph(vertices);
-      const tarjan = new Tarjan(graph);
-      return tarjan.run();
-    }
+  tarjan(step = 5) {
+    const vertices = this.v1.concat(this.v2);
+    const graph = new Graph(vertices);
+    const tarjan = new Tarjan(graph);
+    this.scc = tarjan.run();
+    return this.scc;
   }
 
-  run(step = 5) {
-    this.connect(step);
-    this.scc = this.tarjan();
+  groupByVideo(array) {
+    return array.reduce((objectsByKeyValue, obj) => {
+      const value = obj['videoId'];
+      objectsByKeyValue[value] = (objectsByKeyValue[value] || []).concat(obj);
+      return objectsByKeyValue;
+    }, {});
+  }
+
+  countGroup(obj) {
+    let min = Number.MAX_SAFE_INTEGER,
+        keys = Object.keys(obj);
+    const result = keys.reduce((result, id) => {
+      const total = obj[id].length;
+      result[id] = total;
+      min = Math.min(min, total);
+      return result;
+    }, {
+      'both': 0
+    });
+
+    if (keys.length > 1) {
+      keys.forEach(k => {
+        result[k] -= min;
+      });
+      result['both'] = min;
+    }
+
+    return result;
+  }
+
+  statByCategory() {
+    let result = new Map();
+    this.catIds.forEach(id => {
+      result.set(id, this.ids.reduce((result, id) => {
+        result[id] = 0;
+        return result;
+      }, {
+        'both': 0
+      }));
+    });
+    this.scc.forEach(s => {
+      const catId = s[0].point.categoryId;
+      const groups = this.groupByVideo(s.map(t => t.point));
+      const count = this.countGroup(groups);
+      Object.keys(count).forEach(k => {
+        result.get(catId)[k] += count[k];
+      });
+    });
+    return result;
   }
 
 }

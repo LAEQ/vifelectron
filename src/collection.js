@@ -152,7 +152,7 @@ document.querySelector("form").addEventListener("submit", ev => {
     $('#name-error').addClass('d-none')
   }
 
-  if(form[2].value.length === 0){
+  if(form[1].value.length === 0){
     $('#categories-error').removeClass('d-none')
     valid = false
   } else {
@@ -162,9 +162,9 @@ document.querySelector("form").addEventListener("submit", ev => {
   if(valid){
     const newCol = repo.createCollection(form)
 
-    if(newCol.default === true){
-      collections.forEach(c => c.default = false)
-    }
+    // if(newCol.default === true){
+    //   collections.forEach(c => c.default = false)
+    // }
 
     collections.push(newCol)
 

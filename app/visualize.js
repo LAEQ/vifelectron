@@ -836,8 +836,8 @@ class Repository {
     const collection = new _entity_Collection__WEBPACK_IMPORTED_MODULE_5__["Collection"]({
       id: Object(uuid__WEBPACK_IMPORTED_MODULE_2__["v4"])(),
       name: form[0].value,
-      default: form[1].checked,
-      categoryIds: form[2].value.split(";").sort()
+      default: false,
+      categoryIds: form[1].value.split(";").sort()
     });
     return collection;
   }
@@ -1276,7 +1276,9 @@ Tarjan.prototype = {
   }
 };
 class Statistic {
-  constructor(pointList1, pointList2) {
+  constructor(ids, catIds, pointList1, pointList2) {
+    this.ids = ids;
+    this.catIds = catIds;
     this.p1 = pointList1;
     this.p2 = pointList2;
   }
@@ -1315,18 +1317,63 @@ class Statistic {
     return result;
   }
 
-  tarjan() {
-    if (this.v1 && this.v2) {
-      const vertices = this.v1.concat(this.v2);
-      const graph = new Graph(vertices);
-      const tarjan = new Tarjan(graph);
-      return tarjan.run();
-    }
+  tarjan(step = 5) {
+    const vertices = this.v1.concat(this.v2);
+    const graph = new Graph(vertices);
+    const tarjan = new Tarjan(graph);
+    this.scc = tarjan.run();
+    return this.scc;
   }
 
-  run(step = 5) {
-    this.connect(step);
-    this.scc = this.tarjan();
+  groupByVideo(array) {
+    return array.reduce((objectsByKeyValue, obj) => {
+      const value = obj['videoId'];
+      objectsByKeyValue[value] = (objectsByKeyValue[value] || []).concat(obj);
+      return objectsByKeyValue;
+    }, {});
+  }
+
+  countGroup(obj) {
+    let min = Number.MAX_SAFE_INTEGER,
+        keys = Object.keys(obj);
+    const result = keys.reduce((result, id) => {
+      const total = obj[id].length;
+      result[id] = total;
+      min = Math.min(min, total);
+      return result;
+    }, {
+      'both': 0
+    });
+
+    if (keys.length > 1) {
+      keys.forEach(k => {
+        result[k] -= min;
+      });
+      result['both'] = min;
+    }
+
+    return result;
+  }
+
+  statByCategory() {
+    let result = new Map();
+    this.catIds.forEach(id => {
+      result.set(id, this.ids.reduce((result, id) => {
+        result[id] = 0;
+        return result;
+      }, {
+        'both': 0
+      }));
+    });
+    this.scc.forEach(s => {
+      const catId = s[0].point.categoryId;
+      const groups = this.groupByVideo(s.map(t => t.point));
+      const count = this.countGroup(groups);
+      Object.keys(count).forEach(k => {
+        result.get(catId)[k] += count[k];
+      });
+    });
+    return result;
   }
 
 }
@@ -1344,58 +1391,33 @@ class Statistic {
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _scss_visualize_scss__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./scss/visualize.scss */ "./src/scss/visualize.scss");
 /* harmony import */ var _scss_visualize_scss__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_scss_visualize_scss__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _helpers_initialize__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./helpers/initialize */ "./src/helpers/initialize.js");
-/* harmony import */ var _model_Repository__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./model/Repository */ "./src/model/Repository.js");
-/* harmony import */ var _services_statistic__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./services/statistic */ "./src/services/statistic.js");
+/* harmony import */ var _model_Repository__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./model/Repository */ "./src/model/Repository.js");
+/* harmony import */ var _services_statistic__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./services/statistic */ "./src/services/statistic.js");
+/* harmony import */ var d3__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! d3 */ "d3");
+/* harmony import */ var d3__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(d3__WEBPACK_IMPORTED_MODULE_3__);
 
 
 
 
 const hash = global.location.search.split("=")[1];
-const repo = new _model_Repository__WEBPACK_IMPORTED_MODULE_2__["default"]();
+const repo = new _model_Repository__WEBPACK_IMPORTED_MODULE_1__["default"]();
 let video, categories;
 repo.fetchVideoStatistic(hash).then(r => {
   console.log(r);
   const duration = r['video'].duration;
   const collection = r['video'].collection;
   const videoIds = r['videoIds'];
-  let result = {};
-  videoIds.forEach(id => {
-    result[id] = 0;
-  });
-  result['both'] = 0;
   r['promises'].then(r => {
+    const catIds = r[0].categories.map(c => c.id);
+    let statistic = new _services_statistic__WEBPACK_IMPORTED_MODULE_2__["Statistic"](videoIds, catIds, r[1], r[2]);
+    statistic.connect(5);
+    statistic.tarjan();
+    const result = statistic.statByCategory();
     console.log(result);
-    const categoryList = r[0];
-    const catStat = new Map();
-    categoryList.categories.forEach(c => catStat.set(c.id, Object.clone(result)));
-    let statistic = new _services_statistic__WEBPACK_IMPORTED_MODULE_3__["Statistic"](r[1], r[2]);
-    statistic.run(); // console.log(scc)
-
-    scc.forEach(s => {
-      console.log(s);
-    }); // console.log(scc)
-  }); // video = r[0];
-  // categories = r[1];
-  //
-  // let statistic = new Statistic(r[2], r[3])
-  //
-  // const scc = statistic.run(3)
-  //
-  // const map = new Map()
-  //
-  // const step = Math.floor(video.duration / 200 ) * 10
-  // let start = 0
-  //
-  // while(start < video.duration){
-  //   map.set(start, {
-  //
-  //   })
-  //
-  //
-  //
-  //   start += step
-  // }
+    var svg = d3__WEBPACK_IMPORTED_MODULE_3__["select"]('svg').attr("width", 650).attr("height", 250);
+    var stack = d3__WEBPACK_IMPORTED_MODULE_3__["layout"].stack();
+    stack(result);
+  });
 });
 
 /***/ }),
@@ -1419,6 +1441,17 @@ module.exports = require("collections");
 /***/ (function(module, exports) {
 
 module.exports = require("crypto");
+
+/***/ }),
+
+/***/ "d3":
+/*!*********************!*\
+  !*** external "d3" ***!
+  \*********************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("d3");
 
 /***/ }),
 
