@@ -43,6 +43,39 @@ if (env.name !== "production") {
 
 const ipcMain = require('electron').ipcMain
 
+// User section
+ipcMain.on('user:open', _ => {
+  if(windows['user'] === undefined) {
+    let userWindow = createWindow("user", {
+      width: 1000,
+      height: 600,
+      webPreferences: {
+        nodeIntegration: true
+      }
+    })
+
+    userWindow.setMenu(null);
+    userWindow.loadURL(
+      url.format({
+        pathname: path.join(__dirname, "user.html"),
+        protocol: "file",
+        slashes: true
+      })
+    ).then(_ => {
+    }).catch(err => console.log(err))
+
+    userWindow.webContents.openDevTools()
+    windows['user'] = userWindow
+
+    if (env.name === "development") {
+      userWindow.openDevTools();
+    }
+
+    userWindow.on('closed', _ => {
+      windows['user'] = null
+    })
+  }
+})
 
 // Category section
 ipcMain.on('category:open', _ => {
@@ -55,7 +88,6 @@ ipcMain.on('category:open', _ => {
   })
 
   categoryWindow.setMenu(null);
-  categoryWindow.webContents.openDevTools()
   categoryWindow.loadURL(
     url.format({
       pathname: path.join(__dirname, "category.html"),
@@ -91,7 +123,6 @@ ipcMain.on('collection:open', _ => {
   })
 
   collectionWindow.setMenu(null);
-  collectionWindow.webContents.openDevTools()
   collectionWindow.loadURL(
     url.format({
       pathname: path.join(__dirname, "collection.html"),
@@ -111,7 +142,6 @@ ipcMain.on('collection:open', _ => {
     windows['collection'] = null
   })
 })
-
 
 //Video editor
 ipcMain.on('editor:open', (event, args) => {

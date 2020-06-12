@@ -7,6 +7,7 @@ module.exports = env => {
     entry: {
       background: "./src/background.js",
       app: "./src/app.js",
+      user: "./src/user.js",
       category: "./src/category.js",
       collection: "./src/collection.js",
       editor: "./src/editor.js",

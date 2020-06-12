@@ -25,6 +25,10 @@ class Settings {
     return path.join(this.log, "info.log")
   }
 
+  getUserPath(){
+    return path.join(this.db, "user.json")
+  }
+
   getCategoryPath(){
     return path.join(this.db, "category.json")
   }

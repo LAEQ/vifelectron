@@ -9,10 +9,43 @@ import {Point, PointList} from "./entity/Point"
 import {VideoStatistic} from "./entity/VideoStatistic";
 
 import * as SortedSet from 'collections'
+import {User} from "./entity/User";
 
 class Repository {
   constructor() {
     this.settings = new Settings();
+  }
+
+  async fetchUsers(){
+    const file = this.settings.getUserPath()
+    let result = []
+
+    if(jetpack.exists(file)){
+      await jetpack.readAsync(file, "json").then(r => {
+        result = r.map(obj => {
+          return new User(obj)
+        })
+      })
+
+      return result
+    } else {
+      return result
+    }
+  }
+
+  createUser(form) {
+    const uuid = uuidv4()
+    const files = ['default', 'primary', 'alert']
+
+    const values = {
+      id: uuid,
+      name: form[0].value,
+      default: false
+    }
+
+    const user = new User(values)
+
+    return user
   }
 
   async fetchCategory(){
@@ -283,6 +316,8 @@ class Repository {
         "promises": Promise.all(promises)
     }
   }
+
+
 }
 
 export default Repository;

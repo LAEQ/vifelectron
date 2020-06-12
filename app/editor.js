@@ -892,6 +892,10 @@ class Settings {
     return path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.log, "info.log");
   }
 
+  getUserPath() {
+    return path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.db, "user.json");
+  }
+
   getCategoryPath() {
     return path__WEBPACK_IMPORTED_MODULE_0___default.a.join(this.db, "category.json");
   }
@@ -991,6 +995,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _entity_VideoStatistic__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./entity/VideoStatistic */ "./src/model/entity/VideoStatistic.js");
 /* harmony import */ var collections__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! collections */ "collections");
 /* harmony import */ var collections__WEBPACK_IMPORTED_MODULE_9___default = /*#__PURE__*/__webpack_require__.n(collections__WEBPACK_IMPORTED_MODULE_9__);
+/* harmony import */ var _entity_User__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./entity/User */ "./src/model/entity/User.js");
+
 
 
 
@@ -1005,6 +1011,34 @@ __webpack_require__.r(__webpack_exports__);
 class Repository {
   constructor() {
     this.settings = new _helpers_initialize__WEBPACK_IMPORTED_MODULE_0__["default"]();
+  }
+
+  async fetchUsers() {
+    const file = this.settings.getUserPath();
+    let result = [];
+
+    if (fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.exists(file)) {
+      await fs_jetpack__WEBPACK_IMPORTED_MODULE_3___default.a.readAsync(file, "json").then(r => {
+        result = r.map(obj => {
+          return new _entity_User__WEBPACK_IMPORTED_MODULE_10__["User"](obj);
+        });
+      });
+      return result;
+    } else {
+      return result;
+    }
+  }
+
+  createUser(form) {
+    const uuid = Object(uuid__WEBPACK_IMPORTED_MODULE_2__["v4"])();
+    const files = ['default', 'primary', 'alert'];
+    const values = {
+      id: uuid,
+      name: form[0].value,
+      default: false
+    };
+    const user = new _entity_User__WEBPACK_IMPORTED_MODULE_10__["User"](values);
+    return user;
   }
 
   async fetchCategory() {
@@ -1422,6 +1456,59 @@ class PointList {
 }
 
 
+
+/***/ }),
+
+/***/ "./src/model/entity/User.js":
+/*!**********************************!*\
+  !*** ./src/model/entity/User.js ***!
+  \**********************************/
+/*! exports provided: User, UserList */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "User", function() { return User; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "UserList", function() { return UserList; });
+class User {
+  constructor(obj) {
+    console.log(obj);
+    this.id = obj.id;
+    this.name = obj.name;
+    this.default = obj.default;
+  }
+
+  isDefault() {
+    return this.default;
+  }
+
+}
+class UserList {
+  constructor(users) {
+    this.users = users;
+  }
+
+  getDefault() {
+    return this.users.find(u => u.default);
+  }
+
+  add(user) {
+    this.users.push(user);
+  }
+
+  delete(user) {
+    this.users = this.users.filter(u => u.id !== user.id);
+  }
+
+  isUnique(name) {
+    return this.users.find(u => u.name === name) === undefined;
+  }
+
+  setAsDefault(user) {
+    this.users.forEach(u => u.default = u.id === user.id ? true : false);
+  }
+
+}
 
 /***/ }),
 

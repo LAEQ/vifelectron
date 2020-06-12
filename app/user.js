@@ -81,7 +81,7 @@
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = "./src/category.js");
+/******/ 	return __webpack_require__(__webpack_require__.s = "./src/user.js");
 /******/ })
 /************************************************************************/
 /******/ ({
@@ -627,160 +627,6 @@ module.exports = function (list, options) {
     lastIdentifiers = newLastIdentifiers;
   };
 };
-
-/***/ }),
-
-/***/ "./src/category.js":
-/*!*************************!*\
-  !*** ./src/category.js ***!
-  \*************************/
-/*! no exports provided */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _scss_category_scss__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./scss/category.scss */ "./src/scss/category.scss");
-/* harmony import */ var _scss_category_scss__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_scss_category_scss__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! electron */ "electron");
-/* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(electron__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! fs-jetpack */ "fs-jetpack");
-/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(fs_jetpack__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! jquery */ "jquery");
-/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var datatables__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! datatables */ "datatables");
-/* harmony import */ var datatables__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(datatables__WEBPACK_IMPORTED_MODULE_4__);
-/* harmony import */ var _model_Repository__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./model/Repository */ "./src/model/Repository.js");
-/* harmony import */ var _helpers_initialize__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./helpers/initialize */ "./src/helpers/initialize.js");
-
-
-
-
-
-
-
-const app = electron__WEBPACK_IMPORTED_MODULE_1__["remote"].app;
-const appDir = fs_jetpack__WEBPACK_IMPORTED_MODULE_2___default.a.cwd(app.getAppPath());
-const settings = new _helpers_initialize__WEBPACK_IMPORTED_MODULE_6__["default"]();
-const manifest = appDir.read("package.json", "json");
-const d = datatables__WEBPACK_IMPORTED_MODULE_4___default()();
-const BrowserWindow = electron__WEBPACK_IMPORTED_MODULE_1__["remote"].BrowserWindow;
-const dialog = electron__WEBPACK_IMPORTED_MODULE_1__["remote"].dialog;
-
-const listenFile = id => {
-  const input = fileComponents[id].input;
-  input.addEventListener('change', _ => {
-    const file = fileComponents[id].input.files[0];
-
-    if (file) {
-      fileComponents[id].preview.src = file.path;
-      fileComponents[id].label.innerHTML = file.name;
-      jquery__WEBPACK_IMPORTED_MODULE_3___default()(fileComponents[id].preview).removeClass('d-none');
-      jquery__WEBPACK_IMPORTED_MODULE_3___default()(fileComponents[id].svg).addClass('d-none');
-    }
-  });
-};
-
-let fileIds = ['default', 'primary', 'alert'];
-let fileComponents = {};
-fileIds.forEach(id => {
-  fileComponents[id] = {};
-  fileComponents[id].input = document.getElementById(id);
-  fileComponents[id].label = document.getElementById(`${id}-label`);
-  fileComponents[id].preview = document.getElementById(`${id}-preview`);
-  fileComponents[id].svg = document.getElementById(`${id}-svg`);
-  listenFile(id);
-});
-
-const validate = () => {
-  let valid = true;
-  var form = document.forms['create']; //Name
-
-  let name = form[0].value;
-  let c = categories.find(c => c.name === name);
-
-  if (c !== undefined) {
-    jquery__WEBPACK_IMPORTED_MODULE_3___default()('#name').addClass('is-invalid');
-    jquery__WEBPACK_IMPORTED_MODULE_3___default()('#name-invalid-msg').removeClass('d-none');
-    valid = valid && false;
-  } else {
-    jquery__WEBPACK_IMPORTED_MODULE_3___default()('#name').removeClass('is-invalid');
-    jquery__WEBPACK_IMPORTED_MODULE_3___default()('#name-invalid-msg').addClass('d-none');
-    valid = valid && true;
-  }
-
-  let shortcut = form[1].value;
-  c = categories.find(c => c.shortcut === shortcut);
-
-  if (shortcut.length != 1 || c !== undefined) {
-    jquery__WEBPACK_IMPORTED_MODULE_3___default()('#shortcut').addClass('is-invalid');
-    jquery__WEBPACK_IMPORTED_MODULE_3___default()('#shortcut-invalid-msg').removeClass('d-none');
-    valid = valid && false;
-  }
-
-  return valid;
-};
-
-document.querySelector("form").addEventListener("submit", _ => {
-  event.preventDefault();
-
-  if (validate()) {
-    var form = document.forms['create'];
-    const category = repository.createCategory(form);
-    categories.push(category);
-    repository.save(categories, 'category.json');
-    jquery__WEBPACK_IMPORTED_MODULE_3___default()('#table').DataTable().row.add(category).draw(false);
-    table.reload();
-    document.getElementById('reset').click();
-  }
-});
-const repository = new _model_Repository__WEBPACK_IMPORTED_MODULE_5__["default"]();
-let categories, table;
-repository.fetchCategory().then(result => {
-  categories = result;
-  table = jquery__WEBPACK_IMPORTED_MODULE_3___default()('#table').DataTable({
-    "data": categories,
-    "columns": [{
-      "data": "pathDefault",
-      title: "icon"
-    }, {
-      "data": "name",
-      title: "name"
-    }, {
-      "data": "shortcut",
-      title: "shortcut"
-    }, {
-      "data": null,
-      title: "Action"
-    }],
-    "columnDefs": [{
-      targets: 0,
-      render: function (data) {
-        return `<img src="${data}" width="60" />`;
-      }
-    }, {
-      "targets": -1,
-      "data": null,
-      "defaultContent": "<button class='btn btn-sm btn-outline-danger delete'>Delete</button>"
-    }]
-  });
-  jquery__WEBPACK_IMPORTED_MODULE_3___default()('#table tbody').on('click', 'button', function () {
-    var data = table.row(jquery__WEBPACK_IMPORTED_MODULE_3___default()(this).parents('tr')).data();
-
-    if (jquery__WEBPACK_IMPORTED_MODULE_3___default()(this).hasClass('delete')) {
-      let response = dialog.showMessageBoxSync(electron__WEBPACK_IMPORTED_MODULE_1__["remote"].getCurrentWindow(), {
-        buttons: ["NO", "YES"],
-        message: `Are you sure you want to delete the category: ${data.name}`
-      });
-
-      if (response === 1) {
-        categories = categories.filter(c => c.id != data.id);
-        repository.save(categories, "category.json");
-        table.row(jquery__WEBPACK_IMPORTED_MODULE_3___default()(this).parents('tr')).remove().draw();
-        table.reload();
-      }
-    }
-  });
-});
 
 /***/ }),
 
@@ -1762,6 +1608,134 @@ class Statistic {
 
 /***/ }),
 
+/***/ "./src/user.js":
+/*!*********************!*\
+  !*** ./src/user.js ***!
+  \*********************/
+/*! no exports provided */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _scss_category_scss__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./scss/category.scss */ "./src/scss/category.scss");
+/* harmony import */ var _scss_category_scss__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_scss_category_scss__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! electron */ "electron");
+/* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(electron__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! fs-jetpack */ "fs-jetpack");
+/* harmony import */ var fs_jetpack__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(fs_jetpack__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! jquery */ "jquery");
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var datatables__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! datatables */ "datatables");
+/* harmony import */ var datatables__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(datatables__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var _model_Repository__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./model/Repository */ "./src/model/Repository.js");
+/* harmony import */ var _model_entity_User__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./model/entity/User */ "./src/model/entity/User.js");
+
+
+
+
+
+
+
+const repo = new _model_Repository__WEBPACK_IMPORTED_MODULE_5__["default"]();
+const dialog = electron__WEBPACK_IMPORTED_MODULE_1__["remote"].dialog;
+const d = datatables__WEBPACK_IMPORTED_MODULE_4___default()();
+let table, userList;
+repo.fetchUsers().then(users => {
+  userList = new _model_entity_User__WEBPACK_IMPORTED_MODULE_6__["UserList"](users);
+  table = jquery__WEBPACK_IMPORTED_MODULE_3___default()('#table').DataTable({
+    "data": userList.users,
+    "columns": [{
+      "data": "id",
+      title: "id"
+    }, {
+      "data": "name",
+      title: "name"
+    }, {
+      "data": "default",
+      title: "default"
+    }, {
+      "data": null,
+      title: "Action"
+    }],
+    "columnDefs": [{
+      "targets": -2,
+      render: data => {
+        if (data === false) {
+          return "<button class='btn btn-sm btn-outline-info default'>Set as default</button>";
+        } else {
+          return "";
+        }
+      }
+    }, {
+      "targets": -1,
+      "data": null,
+      "defaultContent": "<button class='btn btn-sm btn-outline-danger delete'>Delete</button>"
+    }]
+  });
+  jquery__WEBPACK_IMPORTED_MODULE_3___default()('#table tbody').on('click', 'button', function () {
+    var data = table.row(jquery__WEBPACK_IMPORTED_MODULE_3___default()(this).parents('tr')).data();
+
+    if (jquery__WEBPACK_IMPORTED_MODULE_3___default()(this).hasClass('default')) {
+      console.log("set as default");
+      const table = jquery__WEBPACK_IMPORTED_MODULE_3___default()('#table').DataTable();
+      userList.setAsDefault(data);
+      repo.save(userList.users, 'user.json');
+      table.clear().rows.add(userList.users).draw();
+      return;
+    }
+
+    if (data.default === true) {
+      dialog.showErrorBox('Operation not permitted', 'You cannot delete the default user');
+      return;
+    }
+
+    let response = dialog.showMessageBoxSync(electron__WEBPACK_IMPORTED_MODULE_1__["remote"].getCurrentWindow(), {
+      buttons: ["NO", "YES"],
+      message: `Are you sure you want to delete the user: ${data.name}`
+    });
+
+    if (response === 1) {
+      userList.delete(data);
+      repo.save(userList.users, "user.json");
+      table.row(jquery__WEBPACK_IMPORTED_MODULE_3___default()(this).parents('tr')).remove().draw();
+    }
+  });
+});
+document.getElementById("reset").addEventListener('click', ev => {
+  ev.preventDefault();
+  jquery__WEBPACK_IMPORTED_MODULE_3___default()(`#name`).removeClass('is-invalid');
+  jquery__WEBPACK_IMPORTED_MODULE_3___default()('#name-error').addClass('d-none');
+  var form = document.forms['create'];
+  form[0].value = "";
+});
+document.querySelector("form").addEventListener("submit", ev => {
+  ev.preventDefault();
+  var valid = true;
+  var form = document.forms['create'];
+  const name = form[0].value;
+  console.log(name);
+
+  if (userList.isUnique(name) === false) {
+    jquery__WEBPACK_IMPORTED_MODULE_3___default()(`#name`).addClass('is-invalid');
+    jquery__WEBPACK_IMPORTED_MODULE_3___default()('#name-error').removeClass('d-none');
+    valid = false;
+  } else {
+    jquery__WEBPACK_IMPORTED_MODULE_3___default()(`#name`).removeClass('is-invalid');
+    jquery__WEBPACK_IMPORTED_MODULE_3___default()('#name-error').addClass('d-none');
+  }
+
+  if (valid) {
+    console.log("create user");
+    const user = repo.createUser(form);
+    userList.add(user);
+    repo.save(userList.users, "user.json");
+    table.clear().rows.add(userList.users).draw();
+    jquery__WEBPACK_IMPORTED_MODULE_3___default()('#reset').click();
+  }
+});
+
+/***/ }),
+
 /***/ "collections":
 /*!******************************!*\
   !*** external "collections" ***!
@@ -1873,4 +1847,4 @@ module.exports = require("uuid");
 /***/ })
 
 /******/ });
-//# sourceMappingURL=category.js.map
+//# sourceMappingURL=user.js.map
